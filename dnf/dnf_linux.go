@@ -1,0 +1,178 @@
+//go:build linux
+
+package dnf
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"os/exec"
+	"strings"
+
+	"github.com/gogrlx/snack"
+)
+
+func available() bool {
+	_, err := exec.LookPath("dnf")
+	return err == nil
+}
+
+// buildArgs constructs the command name and argument list from the base args
+// and the provided options.
+func buildArgs(baseArgs []string, opts snack.Options) (string, []string) {
+	cmd := "dnf"
+	args := make([]string, 0, len(baseArgs)+4)
+
+	if opts.Root != "" {
+		args = append(args, "--installroot="+opts.Root)
+	}
+	args = append(args, baseArgs...)
+	if opts.AssumeYes {
+		args = append(args, "-y")
+	}
+	if opts.DryRun {
+		args = append(args, "--setopt=tsflags=test")
+	}
+
+	if opts.Sudo {
+		args = append([]string{cmd}, args...)
+		cmd = "sudo"
+	}
+	return cmd, args
+}
+
+func run(ctx context.Context, baseArgs []string, opts snack.Options) (string, error) {
+	cmd, args := buildArgs(baseArgs, opts)
+	c := exec.CommandContext(ctx, cmd, args...)
+	var stdout, stderr bytes.Buffer
+	c.Stdout = &stdout
+	c.Stderr = &stderr
+	err := c.Run()
+	if err != nil {
+		se := stderr.String()
+		if strings.Contains(se, "permission denied") || strings.Contains(se, "requires root") ||
+			strings.Contains(se, "This command has to be run with superuser privileges") {
+			return "", fmt.Errorf("dnf: %w", snack.ErrPermissionDenied)
+		}
+		return "", fmt.Errorf("dnf: %s: %w", strings.TrimSpace(se), err)
+	}
+	return stdout.String(), nil
+}
+
+// formatTargets converts targets to dnf CLI arguments.
+// DNF uses "pkg-version" for version pinning.
+func formatTargets(targets []snack.Target) []string {
+	args := make([]string, 0, len(targets))
+	for _, t := range targets {
+		if t.Source != "" {
+			args = append(args, t.Source)
+		} else if t.Version != "" {
+			args = append(args, t.Name+"-"+t.Version)
+		} else {
+			args = append(args, t.Name)
+		}
+	}
+	return args
+}
+
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	o := snack.ApplyOptions(opts...)
+	base := []string{"install", "-y"}
+	if o.Refresh {
+		base = append(base, "--refresh")
+	}
+	if o.FromRepo != "" {
+		base = append(base, "--repo="+o.FromRepo)
+	}
+	if o.Reinstall {
+		base[0] = "reinstall"
+	}
+	for _, t := range pkgs {
+		if t.FromRepo != "" {
+			base = append(base, "--repo="+t.FromRepo)
+			break
+		}
+	}
+	args := append(base, formatTargets(pkgs)...)
+	_, err := run(ctx, args, o)
+	return err
+}
+
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	o := snack.ApplyOptions(opts...)
+	args := append([]string{"remove", "-y"}, snack.TargetNames(pkgs)...)
+	_, err := run(ctx, args, o)
+	return err
+}
+
+func upgrade(ctx context.Context, opts ...snack.Option) error {
+	o := snack.ApplyOptions(opts...)
+	_, err := run(ctx, []string{"upgrade", "-y"}, o)
+	return err
+}
+
+func update(ctx context.Context) error {
+	_, err := run(ctx, []string{"makecache"}, snack.Options{})
+	return err
+}
+
+func list(ctx context.Context) ([]snack.Package, error) {
+	out, err := run(ctx, []string{"list", "installed"}, snack.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("dnf list: %w", err)
+	}
+	return parseList(out), nil
+}
+
+func search(ctx context.Context, query string) ([]snack.Package, error) {
+	out, err := run(ctx, []string{"search", query}, snack.Options{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 1") {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("dnf search: %w", err)
+	}
+	return parseSearch(out), nil
+}
+
+func info(ctx context.Context, pkg string) (*snack.Package, error) {
+	out, err := run(ctx, []string{"info", pkg}, snack.Options{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 1") {
+			return nil, fmt.Errorf("dnf info %s: %w", pkg, snack.ErrNotFound)
+		}
+		return nil, fmt.Errorf("dnf info: %w", err)
+	}
+	p := parseInfo(out)
+	if p == nil {
+		return nil, fmt.Errorf("dnf info %s: %w", pkg, snack.ErrNotFound)
+	}
+	return p, nil
+}
+
+func isInstalled(ctx context.Context, pkg string) (bool, error) {
+	c := exec.CommandContext(ctx, "dnf", "list", "installed", pkg)
+	err := c.Run()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+			return false, nil
+		}
+		return false, fmt.Errorf("dnf isInstalled: %w", err)
+	}
+	return true, nil
+}
+
+func version(ctx context.Context, pkg string) (string, error) {
+	out, err := run(ctx, []string{"list", "installed", pkg}, snack.Options{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 1") {
+			return "", fmt.Errorf("dnf version %s: %w", pkg, snack.ErrNotInstalled)
+		}
+		return "", fmt.Errorf("dnf version: %w", err)
+	}
+	pkgs := parseList(out)
+	if len(pkgs) == 0 {
+		return "", fmt.Errorf("dnf version %s: %w", pkg, snack.ErrNotInstalled)
+	}
+	return pkgs[0].Version, nil
+}
