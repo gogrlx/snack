@@ -8,7 +8,9 @@ import (
 )
 
 // Apk wraps apk-tools operations.
-type Apk struct{}
+type Apk struct {
+	snack.Locker
+}
 
 // New returns a new Apk manager.
 func New() *Apk {
@@ -25,27 +27,37 @@ func (a *Apk) Name() string { return "apk" }
 func (a *Apk) Available() bool { return available() }
 
 // Install one or more packages.
-func (a *Apk) Install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (a *Apk) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (a *Apk) Remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (a *Apk) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return remove(ctx, pkgs, opts...)
 }
 
 // Purge removes packages including config files.
-func (a *Apk) Purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (a *Apk) Purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return purge(ctx, pkgs, opts...)
 }
 
 // Upgrade all installed packages.
 func (a *Apk) Upgrade(ctx context.Context, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return upgrade(ctx, opts...)
 }
 
 // Update refreshes the package index.
 func (a *Apk) Update(ctx context.Context) error {
+	a.Lock()
+	defer a.Unlock()
 	return update(ctx)
 }
 

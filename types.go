@@ -67,6 +67,18 @@ func WithReinstall() Option {
 	return func(o *Options) { o.Reinstall = true }
 }
 
+// Repository represents a configured package repository.
+type Repository struct {
+	ID       string `json:"id"`                 // unique identifier
+	Name     string `json:"name,omitempty"`      // human-readable name
+	URL      string `json:"url"`                 // repository URL
+	Enabled  bool   `json:"enabled"`             // whether the repo is active
+	GPGCheck bool   `json:"gpg_check,omitempty"` // whether GPG verification is enabled
+	GPGKey   string `json:"gpg_key,omitempty"`   // GPG key URL or ID
+	Type     string `json:"type,omitempty"`      // e.g. "deb", "rpm-md", "pkg"
+	Arch     string `json:"arch,omitempty"`      // architecture filter
+}
+
 // ApplyOptions processes functional options into an Options struct.
 func ApplyOptions(opts ...Option) Options {
 	var o Options

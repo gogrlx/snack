@@ -10,15 +10,15 @@ import (
 
 func available() bool { return false }
 
-func install(_ context.Context, _ []string, _ ...snack.Option) error {
+func install(_ context.Context, _ []snack.Target, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
 
-func remove(_ context.Context, _ []string, _ ...snack.Option) error {
+func remove(_ context.Context, _ []snack.Target, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
 
-func purge(_ context.Context, _ []string, _ ...snack.Option) error {
+func purge(_ context.Context, _ []snack.Target, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
 

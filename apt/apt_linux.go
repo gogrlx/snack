@@ -17,7 +17,21 @@ func available() bool {
 	return err == nil
 }
 
-func buildArgs(command string, pkgs []string, opts ...snack.Option) []string {
+// formatTargets converts targets to apt CLI arguments.
+// apt uses "pkg=version" for version pinning.
+func formatTargets(targets []snack.Target) []string {
+	args := make([]string, 0, len(targets))
+	for _, t := range targets {
+		if t.Version != "" {
+			args = append(args, t.Name+"="+t.Version)
+		} else {
+			args = append(args, t.Name)
+		}
+	}
+	return args
+}
+
+func buildArgs(command string, pkgs []snack.Target, opts ...snack.Option) []string {
 	o := snack.ApplyOptions(opts...)
 	var args []string
 	if o.Sudo {
@@ -30,11 +44,17 @@ func buildArgs(command string, pkgs []string, opts ...snack.Option) []string {
 	if o.DryRun {
 		args = append(args, "--dry-run")
 	}
-	args = append(args, pkgs...)
+	if o.FromRepo != "" {
+		args = append(args, "-t", o.FromRepo)
+	}
+	if o.Reinstall && command == "install" {
+		args = append(args, "--reinstall")
+	}
+	args = append(args, formatTargets(pkgs)...)
 	return args
 }
 
-func runAptGet(ctx context.Context, command string, pkgs []string, opts ...snack.Option) error {
+func runAptGet(ctx context.Context, command string, pkgs []snack.Target, opts ...snack.Option) error {
 	args := buildArgs(command, pkgs, opts...)
 	var cmd *exec.Cmd
 	if args[0] == "sudo" {
@@ -57,15 +77,15 @@ func runAptGet(ctx context.Context, command string, pkgs []string, opts ...snack
 	return nil
 }
 
-func install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	return runAptGet(ctx, "install", pkgs, opts...)
 }
 
-func remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	return runAptGet(ctx, "remove", pkgs, opts...)
 }
 
-func purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	return runAptGet(ctx, "purge", pkgs, opts...)
 }
 

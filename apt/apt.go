@@ -8,7 +8,9 @@ import (
 )
 
 // Apt implements the snack.Manager interface using apt-get and apt-cache.
-type Apt struct{}
+type Apt struct {
+	snack.Locker
+}
 
 // New returns a new Apt manager.
 func New() *Apt {
@@ -19,27 +21,37 @@ func New() *Apt {
 func (a *Apt) Name() string { return "apt" }
 
 // Install one or more packages.
-func (a *Apt) Install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (a *Apt) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (a *Apt) Remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (a *Apt) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return remove(ctx, pkgs, opts...)
 }
 
 // Purge one or more packages including config files.
-func (a *Apt) Purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (a *Apt) Purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return purge(ctx, pkgs, opts...)
 }
 
 // Upgrade all installed packages.
 func (a *Apt) Upgrade(ctx context.Context, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
 	return upgrade(ctx, opts...)
 }
 
 // Update refreshes the package index.
 func (a *Apt) Update(ctx context.Context) error {
+	a.Lock()
+	defer a.Unlock()
 	return update(ctx)
 }
 
