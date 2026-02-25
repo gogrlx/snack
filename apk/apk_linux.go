@@ -52,20 +52,34 @@ func run(ctx context.Context, base []string, opts ...snack.Option) (string, erro
 	return strings.TrimSpace(string(out)), nil
 }
 
-func install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
-	args := append([]string{"add"}, pkgs...)
+// formatTargets converts targets to apk CLI arguments.
+// apk uses "pkg=version" for version pinning.
+func formatTargets(targets []snack.Target) []string {
+	args := make([]string, 0, len(targets))
+	for _, t := range targets {
+		if t.Version != "" {
+			args = append(args, t.Name+"="+t.Version)
+		} else {
+			args = append(args, t.Name)
+		}
+	}
+	return args
+}
+
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	args := append([]string{"add"}, formatTargets(pkgs)...)
 	_, err := run(ctx, args, opts...)
 	return err
 }
 
-func remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
-	args := append([]string{"del"}, pkgs...)
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	args := append([]string{"del"}, snack.TargetNames(pkgs)...)
 	_, err := run(ctx, args, opts...)
 	return err
 }
 
-func purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
-	args := append([]string{"del", "--purge"}, pkgs...)
+func purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	args := append([]string{"del", "--purge"}, snack.TargetNames(pkgs)...)
 	_, err := run(ctx, args, opts...)
 	return err
 }

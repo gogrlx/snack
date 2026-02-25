@@ -58,23 +58,47 @@ func run(ctx context.Context, baseArgs []string, opts snack.Options) (string, er
 	return stdout.String(), nil
 }
 
-func install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+// formatTargets converts targets to pacman CLI arguments.
+// Pacman uses "pkg=version" for version pinning.
+func formatTargets(targets []snack.Target) []string {
+	args := make([]string, 0, len(targets))
+	for _, t := range targets {
+		if t.Version != "" {
+			args = append(args, t.Name+"="+t.Version)
+		} else {
+			args = append(args, t.Name)
+		}
+	}
+	return args
+}
+
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
-	args := append([]string{"-S", "--noconfirm"}, pkgs...)
+	base := []string{"-S", "--noconfirm"}
+	if o.Refresh {
+		base = []string{"-Sy", "--noconfirm"}
+	}
+	for _, t := range pkgs {
+		if t.FromRepo != "" || o.FromRepo != "" {
+			// Not directly supported by pacman CLI; user should configure repos
+			break
+		}
+	}
+	args := append(base, formatTargets(pkgs)...)
 	_, err := run(ctx, args, o)
 	return err
 }
 
-func remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
-	args := append([]string{"-R", "--noconfirm"}, pkgs...)
+	args := append([]string{"-R", "--noconfirm"}, snack.TargetNames(pkgs)...)
 	_, err := run(ctx, args, o)
 	return err
 }
 
-func purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
-	args := append([]string{"-Rns", "--noconfirm"}, pkgs...)
+	args := append([]string{"-Rns", "--noconfirm"}, snack.TargetNames(pkgs)...)
 	_, err := run(ctx, args, o)
 	return err
 }

@@ -17,7 +17,7 @@ func available() bool {
 	return err == nil
 }
 
-func install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
 	var args []string
 	if o.Sudo {
@@ -27,7 +27,14 @@ func install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
 	if o.DryRun {
 		args = append(args, "--simulate")
 	}
-	args = append(args, pkgs...)
+	// dpkg -i takes file paths; use Source if set, otherwise Name
+	for _, t := range pkgs {
+		if t.Source != "" {
+			args = append(args, t.Source)
+		} else {
+			args = append(args, t.Name)
+		}
+	}
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -41,7 +48,7 @@ func install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
 	return nil
 }
 
-func remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
 	var args []string
 	if o.Sudo {
@@ -51,7 +58,7 @@ func remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
 	if o.DryRun {
 		args = append(args, "--simulate")
 	}
-	args = append(args, pkgs...)
+	args = append(args, snack.TargetNames(pkgs)...)
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -61,7 +68,7 @@ func remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
 	return nil
 }
 
-func purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
 	var args []string
 	if o.Sudo {
@@ -71,7 +78,7 @@ func purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
 	if o.DryRun {
 		args = append(args, "--simulate")
 	}
-	args = append(args, pkgs...)
+	args = append(args, snack.TargetNames(pkgs)...)
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

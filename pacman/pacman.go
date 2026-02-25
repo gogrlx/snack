@@ -8,7 +8,9 @@ import (
 )
 
 // Pacman wraps the pacman package manager CLI.
-type Pacman struct{}
+type Pacman struct {
+	snack.Locker
+}
 
 // New returns a new Pacman manager.
 func New() *Pacman {
@@ -22,27 +24,37 @@ func (p *Pacman) Name() string { return "pacman" }
 func (p *Pacman) Available() bool { return available() }
 
 // Install one or more packages.
-func (p *Pacman) Install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (p *Pacman) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	p.Lock()
+	defer p.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (p *Pacman) Remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (p *Pacman) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	p.Lock()
+	defer p.Unlock()
 	return remove(ctx, pkgs, opts...)
 }
 
 // Purge removes packages including configuration files.
-func (p *Pacman) Purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (p *Pacman) Purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	p.Lock()
+	defer p.Unlock()
 	return purge(ctx, pkgs, opts...)
 }
 
 // Upgrade all installed packages to their latest versions.
 func (p *Pacman) Upgrade(ctx context.Context, opts ...snack.Option) error {
+	p.Lock()
+	defer p.Unlock()
 	return upgrade(ctx, opts...)
 }
 
 // Update refreshes the package database.
 func (p *Pacman) Update(ctx context.Context) error {
+	p.Lock()
+	defer p.Unlock()
 	return update(ctx)
 }
 

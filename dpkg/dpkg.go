@@ -8,7 +8,9 @@ import (
 )
 
 // Dpkg implements the snack.Manager interface using dpkg and dpkg-query.
-type Dpkg struct{}
+type Dpkg struct {
+	snack.Locker
+}
 
 // New returns a new Dpkg manager.
 func New() *Dpkg {
@@ -19,17 +21,23 @@ func New() *Dpkg {
 func (d *Dpkg) Name() string { return "dpkg" }
 
 // Install one or more .deb files.
-func (d *Dpkg) Install(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (d *Dpkg) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	d.Lock()
+	defer d.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (d *Dpkg) Remove(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (d *Dpkg) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	d.Lock()
+	defer d.Unlock()
 	return remove(ctx, pkgs, opts...)
 }
 
 // Purge one or more packages including config files.
-func (d *Dpkg) Purge(ctx context.Context, pkgs []string, opts ...snack.Option) error {
+func (d *Dpkg) Purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+	d.Lock()
+	defer d.Unlock()
 	return purge(ctx, pkgs, opts...)
 }
 
