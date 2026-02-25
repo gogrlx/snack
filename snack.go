@@ -7,16 +7,55 @@ package snack
 
 import "context"
 
+// Target represents a package to install, remove, or otherwise act on.
+// At minimum, Name must be set. Version and other fields constrain the action.
+//
+// Modeled after SaltStack's pkgs list, which accepts both plain names
+// and name:version mappings:
+//
+//	pkgs:
+//	  - nginx
+//	  - redis: ">=7.0"
+//	  - curl: "8.5.0-1"
+type Target struct {
+	// Name is the package name (required).
+	Name string
+
+	// Version pins a specific version. If empty, the latest is used.
+	// Comparison operators are supported where the backend allows them
+	// (e.g. ">=1.2.3", "<2.0", "1.2.3-4").
+	Version string
+
+	// FromRepo constrains the install to a specific repository
+	// (e.g. "unstable", "community", "epel").
+	FromRepo string
+
+	// Source is a local file path or URL for package files
+	// (e.g. .deb, .rpm, .pkg.tar.zst). When set, Name is used only
+	// for display/logging.
+	Source string
+}
+
+// Targets is a convenience constructor for a slice of [Target] from
+// plain package names (no version constraint).
+func Targets(names ...string) []Target {
+	targets := make([]Target, len(names))
+	for i, name := range names {
+		targets[i] = Target{Name: name}
+	}
+	return targets
+}
+
 // Manager is the common interface implemented by all package manager wrappers.
 type Manager interface {
 	// Install one or more packages.
-	Install(ctx context.Context, pkgs []string, opts ...Option) error
+	Install(ctx context.Context, pkgs []Target, opts ...Option) error
 
 	// Remove one or more packages.
-	Remove(ctx context.Context, pkgs []string, opts ...Option) error
+	Remove(ctx context.Context, pkgs []Target, opts ...Option) error
 
 	// Purge one or more packages (remove including config files).
-	Purge(ctx context.Context, pkgs []string, opts ...Option) error
+	Purge(ctx context.Context, pkgs []Target, opts ...Option) error
 
 	// Upgrade all installed packages to their latest versions.
 	Upgrade(ctx context.Context, opts ...Option) error

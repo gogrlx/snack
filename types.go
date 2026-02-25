@@ -17,6 +17,9 @@ type Options struct {
 	DryRun    bool
 	Root      string // alternate root filesystem
 	Verbose   bool
+	Refresh   bool   // refresh package index before operation
+	FromRepo  string // constrain operation to a specific repository
+	Reinstall bool   // reinstall already-installed packages
 }
 
 // Option is a functional option for package manager operations.
@@ -45,6 +48,23 @@ func WithRoot(root string) Option {
 // WithVerbose enables verbose output.
 func WithVerbose() Option {
 	return func(o *Options) { o.Verbose = true }
+}
+
+// WithRefresh refreshes the package database before the operation.
+// Equivalent to pacman -Sy, apt-get update, apk update, etc.
+func WithRefresh() Option {
+	return func(o *Options) { o.Refresh = true }
+}
+
+// WithFromRepo constrains the operation to a specific repository.
+// e.g. "unstable" for apt, "community" for pacman.
+func WithFromRepo(repo string) Option {
+	return func(o *Options) { o.FromRepo = repo }
+}
+
+// WithReinstall forces reinstallation of already-installed packages.
+func WithReinstall() Option {
+	return func(o *Options) { o.Reinstall = true }
 }
 
 // ApplyOptions processes functional options into an Options struct.
