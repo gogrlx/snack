@@ -77,10 +77,40 @@ if err != nil {
 fmt.Println("Detected:", mgr.Name())
 ```
 
+## Interfaces
+
+snack uses a layered interface design. Every provider implements `Manager` (the base). Extended capabilities are optional — use type assertions to check support:
+
+```go
+// Base — every provider
+snack.Manager           // Install, Remove, Purge, Upgrade, Update, List, Search, Info, IsInstalled, Version
+
+// Optional capabilities — type-assert to check
+snack.VersionQuerier    // LatestVersion, ListUpgrades, UpgradeAvailable, VersionCmp
+snack.Holder            // Hold, Unhold, ListHeld (version pinning)
+snack.Cleaner           // Autoremove, Clean (orphan/cache cleanup)
+snack.FileOwner         // FileList, Owner (file-to-package queries)
+snack.RepoManager       // ListRepos, AddRepo, RemoveRepo
+snack.KeyManager        // AddKey, RemoveKey, ListKeys (GPG keys)
+snack.Grouper           // GroupList, GroupInfo, GroupInstall
+snack.NameNormalizer    // NormalizeName, ParseArch
+```
+
+Check capabilities at runtime:
+
+```go
+caps := snack.GetCapabilities(mgr)
+if caps.Hold {
+    mgr.(snack.Holder).Hold(ctx, []string{"nginx"})
+}
+```
+
 ## Design
 
 - **Thin CLI wrappers** — each sub-package wraps a package manager's CLI tools. No FFI, no library bindings.
 - **Common interface** — all managers implement `snack.Manager`, making them interchangeable.
+- **Capability interfaces** — extended features via type assertion, so providers aren't forced to stub unsupported operations.
+- **Per-provider mutex** — each provider serializes mutating operations independently; apt + snap can run in parallel.
 - **Context-aware** — all operations accept `context.Context` for cancellation and timeouts.
 - **Platform-safe** — build tags ensure packages compile everywhere but only run where appropriate.
 - **No root assumption** — use `snack.WithSudo()` when elevated privileges are needed.
