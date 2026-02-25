@@ -84,3 +84,126 @@ func (a *Apt) Version(ctx context.Context, pkg string) (string, error) {
 func (a *Apt) Available() bool {
 	return available()
 }
+
+// LatestVersion returns the latest available version of a package.
+func (a *Apt) LatestVersion(ctx context.Context, pkg string) (string, error) {
+	return latestVersion(ctx, pkg)
+}
+
+// ListUpgrades returns packages that have newer versions available.
+func (a *Apt) ListUpgrades(ctx context.Context) ([]snack.Package, error) {
+	return listUpgrades(ctx)
+}
+
+// UpgradeAvailable reports whether a newer version of a package is available.
+func (a *Apt) UpgradeAvailable(ctx context.Context, pkg string) (bool, error) {
+	return upgradeAvailable(ctx, pkg)
+}
+
+// VersionCmp compares two version strings using dpkg's native comparison.
+func (a *Apt) VersionCmp(ctx context.Context, ver1, ver2 string) (int, error) {
+	return versionCmp(ctx, ver1, ver2)
+}
+
+// Hold pins packages at their current version.
+func (a *Apt) Hold(ctx context.Context, pkgs []string) error {
+	a.Lock()
+	defer a.Unlock()
+	return hold(ctx, pkgs)
+}
+
+// Unhold removes version pins from packages.
+func (a *Apt) Unhold(ctx context.Context, pkgs []string) error {
+	a.Lock()
+	defer a.Unlock()
+	return unhold(ctx, pkgs)
+}
+
+// ListHeld returns all currently held packages.
+func (a *Apt) ListHeld(ctx context.Context) ([]snack.Package, error) {
+	return listHeld(ctx)
+}
+
+// Autoremove removes packages no longer required as dependencies.
+func (a *Apt) Autoremove(ctx context.Context, opts ...snack.Option) error {
+	a.Lock()
+	defer a.Unlock()
+	return autoremove(ctx, opts...)
+}
+
+// Clean removes cached package files.
+func (a *Apt) Clean(ctx context.Context) error {
+	a.Lock()
+	defer a.Unlock()
+	return clean(ctx)
+}
+
+// FileList returns all files installed by a package.
+func (a *Apt) FileList(ctx context.Context, pkg string) ([]string, error) {
+	return fileList(ctx, pkg)
+}
+
+// Owner returns the package that owns a given file path.
+func (a *Apt) Owner(ctx context.Context, path string) (string, error) {
+	return owner(ctx, path)
+}
+
+// ListRepos returns all configured package repositories.
+func (a *Apt) ListRepos(ctx context.Context) ([]snack.Repository, error) {
+	return listRepos(ctx)
+}
+
+// AddRepo adds a new package repository.
+func (a *Apt) AddRepo(ctx context.Context, repo snack.Repository) error {
+	a.Lock()
+	defer a.Unlock()
+	return addRepo(ctx, repo)
+}
+
+// RemoveRepo removes a configured repository.
+func (a *Apt) RemoveRepo(ctx context.Context, id string) error {
+	a.Lock()
+	defer a.Unlock()
+	return removeRepo(ctx, id)
+}
+
+// AddKey imports a GPG key for package verification.
+func (a *Apt) AddKey(ctx context.Context, key string) error {
+	a.Lock()
+	defer a.Unlock()
+	return addKey(ctx, key)
+}
+
+// RemoveKey removes a GPG key.
+func (a *Apt) RemoveKey(ctx context.Context, keyID string) error {
+	a.Lock()
+	defer a.Unlock()
+	return removeKey(ctx, keyID)
+}
+
+// ListKeys returns all trusted package signing keys.
+func (a *Apt) ListKeys(ctx context.Context) ([]string, error) {
+	return listKeys(ctx)
+}
+
+// NormalizeName returns the canonical form of a package name.
+func (a *Apt) NormalizeName(name string) string {
+	return normalizeName(name)
+}
+
+// ParseArch extracts the architecture from a package name if present.
+func (a *Apt) ParseArch(name string) (string, string) {
+	return parseArch(name)
+}
+
+// Compile-time interface checks.
+var (
+	_ snack.Manager        = (*Apt)(nil)
+	_ snack.VersionQuerier = (*Apt)(nil)
+	_ snack.Holder         = (*Apt)(nil)
+	_ snack.Cleaner        = (*Apt)(nil)
+	_ snack.FileOwner      = (*Apt)(nil)
+	_ snack.RepoManager    = (*Apt)(nil)
+	_ snack.KeyManager     = (*Apt)(nil)
+	_ snack.NameNormalizer = (*Apt)(nil)
+)

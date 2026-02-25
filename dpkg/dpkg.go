@@ -80,3 +80,30 @@ func (d *Dpkg) Version(ctx context.Context, pkg string) (string, error) {
 func (d *Dpkg) Available() bool {
 	return available()
 }
+
+// FileList returns all files installed by a package.
+func (d *Dpkg) FileList(ctx context.Context, pkg string) ([]string, error) {
+	return fileList(ctx, pkg)
+}
+
+// Owner returns the package that owns a given file path.
+func (d *Dpkg) Owner(ctx context.Context, path string) (string, error) {
+	return owner(ctx, path)
+}
+
+// NormalizeName returns the canonical form of a package name.
+func (d *Dpkg) NormalizeName(name string) string {
+	return normalizeName(name)
+}
+
+// ParseArch extracts the architecture from a package name if present.
+func (d *Dpkg) ParseArch(name string) (string, string) {
+	return parseArch(name)
+}
+
+// Compile-time interface checks.
+var (
+	_ snack.Manager        = (*Dpkg)(nil)
+	_ snack.FileOwner      = (*Dpkg)(nil)
+	_ snack.NameNormalizer = (*Dpkg)(nil)
+)
