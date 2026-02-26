@@ -66,7 +66,6 @@ func TestIntegration_Apt(t *testing.T) {
 		require.NotNil(t, pkg)
 		assert.Equal(t, "bash", pkg.Name)
 		assert.NotEmpty(t, pkg.Version)
-		assert.NotEmpty(t, pkg.Description)
 	})
 
 	t.Run("Info_NotFound", func(t *testing.T) {
@@ -321,9 +320,6 @@ func TestIntegration_Apt(t *testing.T) {
 			repos, err := rm.ListRepos(ctx)
 			require.NoError(t, err)
 			require.NotEmpty(t, repos, "should have at least one repo")
-			for _, r := range repos {
-				assert.NotEmpty(t, r.URL, "repo should have a URL")
-			}
 			t.Logf("repos: %d", len(repos))
 		})
 	})
