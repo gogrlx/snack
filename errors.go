@@ -28,4 +28,8 @@ var (
 	// ErrManagerNotFound is returned by detect when no supported package
 	// manager can be found on the system.
 	ErrManagerNotFound = errors.New("no supported package manager found")
+
+	// ErrDaemonNotRunning is returned when a package manager's required
+	// daemon (e.g. snapd) is not running.
+	ErrDaemonNotRunning = errors.New("package manager daemon is not running")
 )

@@ -13,8 +13,12 @@ import (
 )
 
 func available() bool {
-	_, err := exec.LookPath("snap")
-	return err == nil
+	if _, err := exec.LookPath("snap"); err != nil {
+		return false
+	}
+	// Verify snapd is running by checking snap version (requires daemon).
+	cmd := exec.Command("snap", "version")
+	return cmd.Run() == nil
 }
 
 func run(ctx context.Context, args []string) (string, error) {

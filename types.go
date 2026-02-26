@@ -69,7 +69,7 @@ func WithReinstall() Option {
 
 // Repository represents a configured package repository.
 type Repository struct {
-	ID       string `json:"id"`                 // unique identifier
+	ID       string `json:"id"`                  // unique identifier
 	Name     string `json:"name,omitempty"`      // human-readable name
 	URL      string `json:"url"`                 // repository URL
 	Enabled  bool   `json:"enabled"`             // whether the repo is active

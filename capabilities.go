@@ -4,14 +4,14 @@ package snack
 // Useful for grlx to determine what operations are available before
 // attempting them.
 type Capabilities struct {
-	VersionQuery    bool
-	Hold            bool
-	Clean           bool
-	FileOwnership   bool
-	RepoManagement  bool
-	KeyManagement   bool
-	Groups          bool
-	NameNormalize   bool
+	VersionQuery   bool
+	Hold           bool
+	Clean          bool
+	FileOwnership  bool
+	RepoManagement bool
+	KeyManagement  bool
+	Groups         bool
+	NameNormalize  bool
 }
 
 // GetCapabilities probes a Manager for all optional interface support.
