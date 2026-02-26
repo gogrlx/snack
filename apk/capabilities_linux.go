@@ -12,24 +12,18 @@ import (
 )
 
 func latestVersion(ctx context.Context, pkg string) (string, error) {
-	// Use `apk policy` to get available versions
-	c := exec.CommandContext(ctx, "apk", "policy", pkg)
+	// Use `apk search -e` for exact match, output is "pkg-version"
+	c := exec.CommandContext(ctx, "apk", "search", "-e", pkg)
 	out, err := c.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("apk latestVersion %s: %w", pkg, snack.ErrNotFound)
 	}
-	// Output format:
-	// pkg-1.2.3-r0:
-	//   lib/apk/db/installed
-	//   http://...
-	// First line contains the version
 	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	if len(lines) == 0 {
+	if len(lines) == 0 || lines[0] == "" {
 		return "", fmt.Errorf("apk latestVersion %s: %w", pkg, snack.ErrNotFound)
 	}
-	// First line: "pkg-1.2.3-r0:"
-	first := strings.TrimSuffix(strings.TrimSpace(lines[0]), ":")
-	_, ver := splitNameVersion(first)
+	// Output: "pkg-1.2.3-r0"
+	_, ver := splitNameVersion(lines[0])
 	if ver == "" {
 		return "", fmt.Errorf("apk latestVersion %s: %w", pkg, snack.ErrNotFound)
 	}
