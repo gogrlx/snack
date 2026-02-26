@@ -362,6 +362,26 @@ Default packages     : NetworkManager-config-connectivity-fedora
 	}
 }
 
+func TestParseVersionLockDNF5(t *testing.T) {
+	input := `# Added by 'versionlock add' command on 2026-02-26 03:14:29
+Package name: tree
+evr = 2.2.1-2.fc43
+# Added by 'versionlock add' command on 2026-02-26 03:14:45
+Package name: curl
+evr = 8.11.1-3.fc43
+`
+	pkgs := parseVersionLockDNF5(input)
+	if len(pkgs) != 2 {
+		t.Fatalf("expected 2 packages, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "tree" {
+		t.Errorf("pkg[0].Name = %q, want tree", pkgs[0].Name)
+	}
+	if pkgs[1].Name != "curl" {
+		t.Errorf("pkg[1].Name = %q, want curl", pkgs[1].Name)
+	}
+}
+
 func TestParseRepoListDNF5(t *testing.T) {
 	input := `repo id                         repo name                                           status
 fedora                          Fedora 43 - x86_64                                 enabled

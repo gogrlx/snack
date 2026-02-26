@@ -16,7 +16,11 @@ jobs:
           go-version-file: go.mod
       - run: go build ./...
       - run: go vet ./...
-      - run: go test -race ./...
+      - run: go test -race -coverprofile=coverage-unit.out ./...
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage-unit.out
 
   debian:
     name: Debian (apt)
@@ -32,7 +36,12 @@ jobs:
           apt-get update
           apt-get install -y sudo tree curl
       - name: Integration tests
-        run: go test -v -tags integration -count=1 ./apt/ ./dpkg/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-debian.out ./apt/ ./dpkg/ ./detect/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-debian
+          path: coverage-debian.out
 
   ubuntu:
     name: Ubuntu (apt + snap)
@@ -48,9 +57,14 @@ jobs:
           sudo apt-get install -y tree
           sudo snap install hello-world 2>/dev/null; sudo snap remove hello-world 2>/dev/null
       - name: Integration tests (apt)
-        run: sudo -E go test -v -tags integration -count=1 ./apt/ ./dpkg/ ./detect/
+        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-ubuntu-apt.out ./apt/ ./dpkg/ ./detect/
       - name: Integration tests (snap)
-        run: sudo -E go test -v -tags integration -count=1 ./snap/
+        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-ubuntu-snap.out ./snap/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-ubuntu
+          path: coverage-ubuntu-*.out
 
   fedora-dnf4:
     name: Fedora 39 (dnf4)
@@ -65,7 +79,12 @@ jobs:
         run: |
           dnf install -y tree sudo
       - name: Integration tests
-        run: go test -v -tags integration -count=1 ./dnf/ ./rpm/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-fedora39.out ./dnf/ ./rpm/ ./detect/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-fedora39
+          path: coverage-fedora39.out
 
   fedora-dnf5:
     name: Fedora latest (dnf5)
@@ -80,7 +99,12 @@ jobs:
         run: |
           dnf install -y tree sudo
       - name: Integration tests
-        run: go test -v -tags integration -count=1 ./dnf/ ./rpm/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-fedora-latest.out ./dnf/ ./rpm/ ./detect/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-fedora-latest
+          path: coverage-fedora-latest.out
 
   alpine:
     name: Alpine (apk)
@@ -95,7 +119,12 @@ jobs:
         run: |
           apk add --no-cache sudo tree bash
       - name: Integration tests
-        run: go test -v -tags integration -count=1 ./apk/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-alpine.out ./apk/ ./detect/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-alpine
+          path: coverage-alpine.out
 
   arch:
     name: Arch Linux (pacman)
@@ -111,7 +140,12 @@ jobs:
           pacman -Syu --noconfirm
           pacman -S --noconfirm sudo tree
       - name: Integration tests
-        run: go test -v -tags integration -count=1 ./pacman/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-arch.out ./pacman/ ./detect/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-arch
+          path: coverage-arch.out
 
   flatpak:
     name: Ubuntu + Flatpak
@@ -130,4 +164,29 @@ jobs:
           sudo apt-get install -y flatpak
           sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: Integration tests
-        run: sudo -E go test -v -tags integration -count=1 ./flatpak/
+        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-flatpak.out ./flatpak/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-flatpak
+          path: coverage-flatpak.out
+
+  codecov:
+    name: Upload Coverage
+    runs-on: ubuntu-latest
+    needs: [unit-tests, debian, ubuntu, fedora-dnf4, fedora-dnf5, alpine, arch, flatpak]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+      - name: List coverage files
+        run: ls -la coverage-*.out 2>/dev/null || echo "No coverage files found"
+      - uses: codecov/codecov-action@v5
+        with:
+          files: coverage-unit.out,coverage-debian.out,coverage-ubuntu-apt.out,coverage-ubuntu-snap.out,coverage-fedora39.out,coverage-fedora-latest.out,coverage-alpine.out,coverage-arch.out,coverage-flatpak.out
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

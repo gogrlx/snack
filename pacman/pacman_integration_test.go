@@ -19,92 +19,274 @@ func TestIntegration_Pacman(t *testing.T) {
 	}
 	ctx := context.Background()
 
+	assert.Equal(t, "pacman", mgr.Name())
+
+	caps := snack.GetCapabilities(mgr)
+	assert.True(t, caps.VersionQuery, "pacman should support VersionQuery")
+	assert.True(t, caps.Clean, "pacman should support Clean")
+	assert.True(t, caps.FileOwnership, "pacman should support FileOwnership")
+	assert.True(t, caps.Groups, "pacman should support Groups")
+	assert.False(t, caps.Hold, "pacman should not support Hold")
+	assert.False(t, caps.RepoManagement, "pacman should not support RepoManagement")
+	assert.False(t, caps.KeyManagement, "pacman should not support KeyManagement")
+	assert.False(t, caps.NameNormalize, "pacman should not support NameNormalize")
+
 	t.Run("Update", func(t *testing.T) {
-		err := mgr.Update(ctx)
-		require.NoError(t, err)
+		require.NoError(t, mgr.Update(ctx))
 	})
 
 	t.Run("Search", func(t *testing.T) {
 		pkgs, err := mgr.Search(ctx, "curl")
 		require.NoError(t, err)
 		require.NotEmpty(t, pkgs)
+
+		found := false
+		for _, p := range pkgs {
+			if p.Name == "curl" {
+				found = true
+				assert.NotEmpty(t, p.Description)
+				break
+			}
+		}
+		assert.True(t, found, "curl should appear in search results")
+	})
+
+	t.Run("Search_NoResults", func(t *testing.T) {
+		pkgs, err := mgr.Search(ctx, "xyznonexistentpackage999")
+		require.NoError(t, err)
+		assert.Empty(t, pkgs)
 	})
 
 	t.Run("Info", func(t *testing.T) {
-		pkg, err := mgr.Info(ctx, "curl")
+		pkg, err := mgr.Info(ctx, "bash")
 		require.NoError(t, err)
 		require.NotNil(t, pkg)
-		assert.Equal(t, "curl", pkg.Name)
+		assert.Equal(t, "bash", pkg.Name)
+		assert.NotEmpty(t, pkg.Version)
 	})
 
-	t.Run("Install", func(t *testing.T) {
-		err := mgr.Install(ctx, snack.Targets("tree"), snack.WithSudo(), snack.WithAssumeYes())
+	t.Run("Info_NotFound", func(t *testing.T) {
+		_, err := mgr.Info(ctx, "xyznonexistentpackage999")
+		assert.Error(t, err)
+	})
+
+	t.Run("Install_Single", func(t *testing.T) {
+		_ = mgr.Remove(ctx, snack.Targets("tree"))
+		err := mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 		require.NoError(t, err)
 	})
 
-	t.Run("IsInstalled", func(t *testing.T) {
+	t.Run("IsInstalled_True", func(t *testing.T) {
 		installed, err := mgr.IsInstalled(ctx, "tree")
 		require.NoError(t, err)
 		assert.True(t, installed)
 	})
 
-	t.Run("Version", func(t *testing.T) {
+	t.Run("IsInstalled_False", func(t *testing.T) {
+		installed, err := mgr.IsInstalled(ctx, "xyznonexistentpackage999")
+		require.NoError(t, err)
+		assert.False(t, installed)
+	})
+
+	t.Run("Version_Installed", func(t *testing.T) {
 		ver, err := mgr.Version(ctx, "tree")
 		require.NoError(t, err)
 		assert.NotEmpty(t, ver)
+		t.Logf("tree version: %s", ver)
 	})
 
-	t.Run("List", func(t *testing.T) {
+	t.Run("Version_NotInstalled", func(t *testing.T) {
+		_, err := mgr.Version(ctx, "xyznonexistentpackage999")
+		assert.Error(t, err)
+	})
+
+	t.Run("List_ContainsInstalled", func(t *testing.T) {
 		pkgs, err := mgr.List(ctx)
 		require.NoError(t, err)
+		require.NotEmpty(t, pkgs)
+
 		found := false
 		for _, p := range pkgs {
 			if p.Name == "tree" {
 				found = true
+				assert.NotEmpty(t, p.Version)
 				break
 			}
 		}
 		assert.True(t, found, "tree should be in installed list")
 	})
 
-	t.Run("Remove", func(t *testing.T) {
-		err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithSudo(), snack.WithAssumeYes())
+	t.Run("Install_Multiple", func(t *testing.T) {
+		err := mgr.Install(ctx, snack.Targets("tree", "less"), snack.WithAssumeYes())
 		require.NoError(t, err)
+
+		for _, pkg := range []string{"tree", "less"} {
+			installed, err := mgr.IsInstalled(ctx, pkg)
+			require.NoError(t, err)
+			assert.True(t, installed, "%s should be installed", pkg)
+		}
 	})
 
-	t.Run("IsInstalled_After_Remove", func(t *testing.T) {
+	t.Run("Purge", func(t *testing.T) {
+		err := mgr.Purge(ctx, snack.Targets("less"), snack.WithAssumeYes())
+		require.NoError(t, err)
+
+		installed, err := mgr.IsInstalled(ctx, "less")
+		require.NoError(t, err)
+		assert.False(t, installed)
+	})
+
+	t.Run("Remove", func(t *testing.T) {
+		err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		require.NoError(t, err)
+
 		installed, err := mgr.IsInstalled(ctx, "tree")
 		require.NoError(t, err)
 		assert.False(t, installed)
 	})
 
-	t.Run("Capabilities", func(t *testing.T) {
-		if vq, ok := mgr.(snack.VersionQuerier); ok {
+	// --- VersionQuerier ---
+	t.Run("VersionQuerier", func(t *testing.T) {
+		vq, ok := mgr.(snack.VersionQuerier)
+		require.True(t, ok)
+
+		t.Run("LatestVersion", func(t *testing.T) {
 			ver, err := vq.LatestVersion(ctx, "curl")
 			require.NoError(t, err)
 			assert.NotEmpty(t, ver)
+			t.Logf("curl latest: %s", ver)
+		})
 
-			upgrades, err := vq.ListUpgrades(ctx)
+		t.Run("LatestVersion_NotFound", func(t *testing.T) {
+			_, err := vq.LatestVersion(ctx, "xyznonexistentpackage999")
+			assert.Error(t, err)
+		})
+
+		t.Run("ListUpgrades", func(t *testing.T) {
+			pkgs, err := vq.ListUpgrades(ctx)
 			require.NoError(t, err)
-			_ = upgrades
-		}
+			t.Logf("upgradable packages: %d", len(pkgs))
+		})
 
-		if cl, ok := mgr.(snack.Cleaner); ok {
+		t.Run("UpgradeAvailable", func(t *testing.T) {
+			avail, err := vq.UpgradeAvailable(ctx, "bash")
+			require.NoError(t, err)
+			_ = avail
+		})
+
+		t.Run("VersionCmp", func(t *testing.T) {
+			tests := []struct {
+				v1, v2 string
+				want   int
+			}{
+				{"1.0.0-1", "1.0.0-2", -1},
+				{"2.0.0-1", "1.0.0-1", 1},
+				{"1.0.0-1", "1.0.0-1", 0},
+			}
+			for _, tt := range tests {
+				cmp, err := vq.VersionCmp(ctx, tt.v1, tt.v2)
+				require.NoError(t, err, "VersionCmp(%s, %s)", tt.v1, tt.v2)
+				assert.Equal(t, tt.want, cmp, "VersionCmp(%s, %s)", tt.v1, tt.v2)
+			}
+		})
+	})
+
+	// --- Cleaner ---
+	t.Run("Cleaner", func(t *testing.T) {
+		cl, ok := mgr.(snack.Cleaner)
+		require.True(t, ok)
+
+		t.Run("Autoremove", func(t *testing.T) {
+			err := cl.Autoremove(ctx)
+			require.NoError(t, err)
+		})
+
+		t.Run("Clean", func(t *testing.T) {
 			err := cl.Clean(ctx)
 			require.NoError(t, err)
-		}
+		})
+	})
 
-		if fo, ok := mgr.(snack.FileOwner); ok {
-			owner, err := fo.Owner(ctx, "/usr/bin/pacman")
-			if err == nil {
-				assert.NotEmpty(t, owner)
+	// --- FileOwner ---
+	t.Run("FileOwner", func(t *testing.T) {
+		fo, ok := mgr.(snack.FileOwner)
+		require.True(t, ok)
+
+		_ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+
+		t.Run("FileList", func(t *testing.T) {
+			files, err := fo.FileList(ctx, "tree")
+			require.NoError(t, err)
+			require.NotEmpty(t, files)
+
+			found := false
+			for _, f := range files {
+				if f == "/usr/bin/tree" {
+					found = true
+					break
+				}
 			}
-		}
+			assert.True(t, found, "/usr/bin/tree should be in file list")
+		})
 
-		if g, ok := mgr.(snack.Grouper); ok {
+		t.Run("FileList_NotInstalled", func(t *testing.T) {
+			_, err := fo.FileList(ctx, "xyznonexistentpackage999")
+			assert.Error(t, err)
+		})
+
+		t.Run("Owner", func(t *testing.T) {
+			owner, err := fo.Owner(ctx, "/usr/bin/tree")
+			require.NoError(t, err)
+			assert.Contains(t, owner, "tree")
+		})
+
+		t.Run("Owner_NotFound", func(t *testing.T) {
+			_, err := fo.Owner(ctx, "/nonexistent/path/xyz")
+			assert.Error(t, err)
+		})
+
+		_ = mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+	})
+
+	// --- Grouper ---
+	t.Run("Grouper", func(t *testing.T) {
+		g, ok := mgr.(snack.Grouper)
+		require.True(t, ok)
+
+		t.Run("GroupList", func(t *testing.T) {
 			groups, err := g.GroupList(ctx)
 			require.NoError(t, err)
-			assert.NotEmpty(t, groups)
-		}
+			// Minimal containers may have no groups
+			t.Logf("groups: %d", len(groups))
+			if len(groups) == 0 {
+				t.Skip("no groups available in this container")
+			}
+		})
+
+		t.Run("GroupInfo", func(t *testing.T) {
+			groups, err := g.GroupList(ctx)
+			require.NoError(t, err)
+			if len(groups) == 0 {
+				t.Skip("no groups available")
+			}
+			pkgs, err := g.GroupInfo(ctx, groups[0])
+			if err == nil {
+				t.Logf("group %q packages: %d", groups[0], len(pkgs))
+			}
+		})
+
+		t.Run("GroupInfo_NotFound", func(t *testing.T) {
+			// pacman returns empty for unknown groups, not necessarily an error
+			pkgs, err := g.GroupInfo(ctx, "xyznonexistentgroup999")
+			if err == nil {
+				assert.Empty(t, pkgs)
+			}
+		})
+	})
+
+	// --- Upgrade ---
+	t.Run("Upgrade", func(t *testing.T) {
+		err := mgr.Upgrade(ctx, snack.WithAssumeYes())
+		require.NoError(t, err)
 	})
 }
