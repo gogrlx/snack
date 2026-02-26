@@ -54,7 +54,7 @@ func (d *DNF) Unhold(ctx context.Context, pkgs []string) error {
 
 // ListHeld returns all currently held packages.
 func (d *DNF) ListHeld(ctx context.Context) ([]snack.Package, error) {
-	return listHeld(ctx)
+	return listHeld(ctx, d.v5)
 }
 
 // Autoremove removes orphaned packages.

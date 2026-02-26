@@ -32,7 +32,7 @@ func unhold(_ context.Context, _ []string) error {
 	return snack.ErrUnsupportedPlatform
 }
 
-func listHeld(_ context.Context) ([]snack.Package, error) {
+func listHeld(_ context.Context, _ bool) ([]snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 

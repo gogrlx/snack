@@ -102,10 +102,13 @@ func unhold(ctx context.Context, pkgs []string) error {
 	return err
 }
 
-func listHeld(ctx context.Context) ([]snack.Package, error) {
+func listHeld(ctx context.Context, v5 bool) ([]snack.Package, error) {
 	out, err := run(ctx, []string{"versionlock", "list"}, snack.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("dnf listHeld: %w", err)
+	}
+	if v5 {
+		return parseVersionLockDNF5(out), nil
 	}
 	return parseVersionLock(out), nil
 }

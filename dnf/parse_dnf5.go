@@ -188,6 +188,27 @@ func parseGroupListDNF5(output string) []string {
 	return groups
 }
 
+// parseVersionLockDNF5 parses `dnf5 versionlock list` output.
+// Format:
+//
+//	# Added by 'versionlock add' command on 2026-02-26 03:14:29
+//	Package name: tree
+//	evr = 2.2.1-2.fc43
+func parseVersionLockDNF5(output string) []snack.Package {
+	output = stripPreamble(output)
+	var pkgs []snack.Package
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "Package name:") {
+			name := strings.TrimSpace(strings.TrimPrefix(trimmed, "Package name:"))
+			if name != "" {
+				pkgs = append(pkgs, snack.Package{Name: name, Installed: true})
+			}
+		}
+	}
+	return pkgs
+}
+
 // parseGroupInfoDNF5 parses `dnf5 group info` output.
 // Format:
 //
