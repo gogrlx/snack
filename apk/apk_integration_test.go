@@ -83,7 +83,7 @@ func TestIntegration_Apk(t *testing.T) {
 
 	t.Run("Capabilities", func(t *testing.T) {
 		if vq, ok := mgr.(snack.VersionQuerier); ok {
-			ver, err := vq.LatestVersion(ctx, "tree")
+			ver, err := vq.LatestVersion(ctx, "busybox")
 			require.NoError(t, err)
 			assert.NotEmpty(t, ver)
 
