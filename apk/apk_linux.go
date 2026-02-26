@@ -96,18 +96,22 @@ func update(ctx context.Context) error {
 
 func list(ctx context.Context) ([]snack.Package, error) {
 	cmd := exec.CommandContext(ctx, "apk", "list", "--installed")
-	out, err := cmd.CombinedOutput()
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("apk list: %w", err)
+		return nil, fmt.Errorf("apk list: %s: %w", strings.TrimSpace(stderr.String()), err)
 	}
 	return parseListInstalled(string(out)), nil
 }
 
 func search(ctx context.Context, query string) ([]snack.Package, error) {
 	cmd := exec.CommandContext(ctx, "apk", "search", "-v", query)
-	out, err := cmd.CombinedOutput()
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("apk search: %w", err)
+		return nil, fmt.Errorf("apk search: %s: %w", strings.TrimSpace(stderr.String()), err)
 	}
 	results := parseSearch(string(out))
 	if len(results) == 0 {
