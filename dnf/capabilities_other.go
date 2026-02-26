@@ -8,15 +8,15 @@ import (
 	"github.com/gogrlx/snack"
 )
 
-func latestVersion(_ context.Context, _ string) (string, error) {
+func latestVersion(_ context.Context, _ string, _ bool) (string, error) {
 	return "", snack.ErrUnsupportedPlatform
 }
 
-func listUpgrades(_ context.Context) ([]snack.Package, error) {
+func listUpgrades(_ context.Context, _ bool) ([]snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
-func upgradeAvailable(_ context.Context, _ string) (bool, error) {
+func upgradeAvailable(_ context.Context, _ string, _ bool) (bool, error) {
 	return false, snack.ErrUnsupportedPlatform
 }
 
@@ -52,7 +52,7 @@ func owner(_ context.Context, _ string) (string, error) {
 	return "", snack.ErrUnsupportedPlatform
 }
 
-func listRepos(_ context.Context) ([]snack.Repository, error) {
+func listRepos(_ context.Context, _ bool) ([]snack.Repository, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
@@ -76,11 +76,11 @@ func listKeys(_ context.Context) ([]string, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
-func groupList(_ context.Context) ([]string, error) {
+func groupList(_ context.Context, _ bool) ([]string, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
-func groupInfo(_ context.Context, _ string) ([]snack.Package, error) {
+func groupInfo(_ context.Context, _ string, _ bool) ([]snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 

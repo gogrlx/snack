@@ -14,7 +14,7 @@ import (
 	"github.com/gogrlx/snack"
 )
 
-func latestVersion(ctx context.Context, pkg string) (string, error) {
+func latestVersion(ctx context.Context, pkg string, v5 bool) (string, error) {
 	// Try "dnf info <pkg>" which shows both installed and available
 	out, err := run(ctx, []string{"info", pkg}, snack.Options{})
 	if err != nil {
@@ -23,26 +23,42 @@ func latestVersion(ctx context.Context, pkg string) (string, error) {
 		}
 		return "", fmt.Errorf("dnf latestVersion: %w", err)
 	}
-	p := parseInfo(out)
+	var p *snack.Package
+	if v5 {
+		p = parseInfoDNF5(out)
+	} else {
+		p = parseInfo(out)
+	}
 	if p == nil || p.Version == "" {
 		return "", fmt.Errorf("dnf latestVersion %s: %w", pkg, snack.ErrNotFound)
 	}
 	return p.Version, nil
 }
 
-func listUpgrades(ctx context.Context) ([]snack.Package, error) {
-	out, err := run(ctx, []string{"list", "upgrades"}, snack.Options{})
+func listUpgrades(ctx context.Context, v5 bool) ([]snack.Package, error) {
+	args := []string{"list", "upgrades"}
+	if v5 {
+		args = []string{"list", "--upgrades"}
+	}
+	out, err := run(ctx, args, snack.Options{})
 	if err != nil {
 		if strings.Contains(err.Error(), "exit status 1") {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("dnf listUpgrades: %w", err)
 	}
+	if v5 {
+		return parseListDNF5(out), nil
+	}
 	return parseList(out), nil
 }
 
-func upgradeAvailable(ctx context.Context, pkg string) (bool, error) {
-	c := exec.CommandContext(ctx, "dnf", "list", "upgrades", pkg)
+func upgradeAvailable(ctx context.Context, pkg string, v5 bool) (bool, error) {
+	args := []string{"list", "upgrades", pkg}
+	if v5 {
+		args = []string{"list", "--upgrades", pkg}
+	}
+	c := exec.CommandContext(ctx, "dnf", args...)
 	err := c.Run()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
@@ -144,10 +160,13 @@ func owner(ctx context.Context, path string) (string, error) {
 	return strings.TrimSpace(stdout.String()), nil
 }
 
-func listRepos(ctx context.Context) ([]snack.Repository, error) {
+func listRepos(ctx context.Context, v5 bool) ([]snack.Repository, error) {
 	out, err := run(ctx, []string{"repolist", "--all"}, snack.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("dnf listRepos: %w", err)
+	}
+	if v5 {
+		return parseRepoListDNF5(out), nil
 	}
 	return parseRepoList(out), nil
 }
@@ -206,21 +225,27 @@ func listKeys(ctx context.Context) ([]string, error) {
 	return keys, nil
 }
 
-func groupList(ctx context.Context) ([]string, error) {
+func groupList(ctx context.Context, v5 bool) ([]string, error) {
 	out, err := run(ctx, []string{"group", "list"}, snack.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("dnf groupList: %w", err)
 	}
+	if v5 {
+		return parseGroupListDNF5(out), nil
+	}
 	return parseGroupList(out), nil
 }
 
-func groupInfo(ctx context.Context, group string) ([]snack.Package, error) {
+func groupInfo(ctx context.Context, group string, v5 bool) ([]snack.Package, error) {
 	out, err := run(ctx, []string{"group", "info", group}, snack.Options{})
 	if err != nil {
 		if strings.Contains(err.Error(), "exit status 1") {
 			return nil, fmt.Errorf("dnf groupInfo %s: %w", group, snack.ErrNotFound)
 		}
 		return nil, fmt.Errorf("dnf groupInfo: %w", err)
+	}
+	if v5 {
+		return parseGroupInfoDNF5(out), nil
 	}
 	return parseGroupInfo(out), nil
 }

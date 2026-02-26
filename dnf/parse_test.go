@@ -1,6 +1,7 @@
 package dnf
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gogrlx/snack"
@@ -217,6 +218,165 @@ func TestParseArch(t *testing.T) {
 		if name != tt.wantName || arch != tt.wantArch {
 			t.Errorf("parseArch(%q) = (%q, %q), want (%q, %q)", tt.input, name, arch, tt.wantName, tt.wantArch)
 		}
+	}
+}
+
+// --- dnf5 parser tests ---
+
+func TestStripPreamble(t *testing.T) {
+	input := "Updating and loading repositories:\n Fedora 43 - x86_64              100% |  10.2 MiB/s |  20.5 MiB | 00m02s\nRepositories loaded.\nInstalled packages\nbash.x86_64   5.3.0-2.fc43   abc123\n"
+	got := stripPreamble(input)
+	if strings.Contains(got, "Updating and loading") {
+		t.Error("preamble not stripped")
+	}
+	if strings.Contains(got, "Repositories loaded") {
+		t.Error("preamble tail not stripped")
+	}
+	if !strings.Contains(got, "bash.x86_64") {
+		t.Error("content was incorrectly stripped")
+	}
+}
+
+func TestParseListDNF5(t *testing.T) {
+	input := `Installed packages
+alternatives.x86_64   1.33-3.fc43   a899a9b296804e8ab27411270a04f5e9
+bash.x86_64           5.3.0-2.fc43  3b3d0b7480cd48d19a2c4259e547f2da
+`
+	pkgs := parseListDNF5(input)
+	if len(pkgs) != 2 {
+		t.Fatalf("expected 2 packages, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "alternatives" || pkgs[0].Version != "1.33-3.fc43" || pkgs[0].Arch != "x86_64" {
+		t.Errorf("unexpected pkg[0]: %+v", pkgs[0])
+	}
+	if pkgs[1].Name != "bash" || pkgs[1].Version != "5.3.0-2.fc43" {
+		t.Errorf("unexpected pkg[1]: %+v", pkgs[1])
+	}
+}
+
+func TestParseListDNF5WithPreamble(t *testing.T) {
+	input := "Updating and loading repositories:\nRepositories loaded.\nInstalled packages\nbash.x86_64   5.3.0-2.fc43  abc\n"
+	pkgs := parseListDNF5(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "bash" {
+		t.Errorf("expected bash, got %q", pkgs[0].Name)
+	}
+}
+
+func TestParseSearchDNF5(t *testing.T) {
+	input := `Matched fields: name
+ tree.x86_64  File system tree viewer
+ treescan.noarch  Scan directory trees, list directories/files, stat, sync, grep
+Matched fields: summary
+ baobab.x86_64  A graphical directory tree analyzer
+`
+	pkgs := parseSearchDNF5(input)
+	if len(pkgs) != 3 {
+		t.Fatalf("expected 3 packages, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "tree" || pkgs[0].Arch != "x86_64" {
+		t.Errorf("unexpected pkg[0]: %+v", pkgs[0])
+	}
+	if pkgs[0].Description != "File system tree viewer" {
+		t.Errorf("unexpected description: %q", pkgs[0].Description)
+	}
+	if pkgs[2].Name != "baobab" {
+		t.Errorf("unexpected pkg[2]: %+v", pkgs[2])
+	}
+}
+
+func TestParseInfoDNF5(t *testing.T) {
+	input := `Available packages
+Name           : tree
+Epoch          : 0
+Version        : 2.2.1
+Release        : 2.fc43
+Architecture   : x86_64
+Download size  : 61.3 KiB
+Installed size : 112.2 KiB
+Source         : tree-pkg-2.2.1-2.fc43.src.rpm
+Repository     : fedora
+Summary        : File system tree viewer
+`
+	p := parseInfoDNF5(input)
+	if p == nil {
+		t.Fatal("expected package, got nil")
+	}
+	if p.Name != "tree" {
+		t.Errorf("Name = %q, want tree", p.Name)
+	}
+	if p.Version != "2.2.1-2.fc43" {
+		t.Errorf("Version = %q, want 2.2.1-2.fc43", p.Version)
+	}
+	if p.Arch != "x86_64" {
+		t.Errorf("Arch = %q, want x86_64", p.Arch)
+	}
+	if p.Repository != "fedora" {
+		t.Errorf("Repository = %q, want fedora", p.Repository)
+	}
+	if p.Description != "File system tree viewer" {
+		t.Errorf("Description = %q", p.Description)
+	}
+}
+
+func TestParseGroupListDNF5(t *testing.T) {
+	input := `ID                          Name                                        Installed
+neuron-modelling-simulators Neuron Modelling Simulators                        no
+kde-desktop                 KDE                                                no
+`
+	groups := parseGroupListDNF5(input)
+	if len(groups) != 2 {
+		t.Fatalf("expected 2 groups, got %d", len(groups))
+	}
+	if groups[0] != "Neuron Modelling Simulators" {
+		t.Errorf("groups[0] = %q", groups[0])
+	}
+	if groups[1] != "KDE" {
+		t.Errorf("groups[1] = %q", groups[1])
+	}
+}
+
+func TestParseGroupInfoDNF5(t *testing.T) {
+	input := `Id                   : kde-desktop
+Name                 : KDE
+Description          : The KDE Plasma Workspaces...
+Installed            : no
+Mandatory packages   : plasma-desktop
+                     : plasma-workspace
+Default packages     : NetworkManager-config-connectivity-fedora
+`
+	pkgs := parseGroupInfoDNF5(input)
+	if len(pkgs) != 3 {
+		t.Fatalf("expected 3 packages, got %d", len(pkgs))
+	}
+	names := map[string]bool{}
+	for _, p := range pkgs {
+		names[p.Name] = true
+	}
+	for _, want := range []string{"plasma-desktop", "plasma-workspace", "NetworkManager-config-connectivity-fedora"} {
+		if !names[want] {
+			t.Errorf("missing package %q", want)
+		}
+	}
+}
+
+func TestParseRepoListDNF5(t *testing.T) {
+	input := `repo id                         repo name                                           status
+fedora                          Fedora 43 - x86_64                                 enabled
+updates                         Fedora 43 - x86_64 - Updates                       enabled
+updates-testing                 Fedora 43 - x86_64 - Test Updates                 disabled
+`
+	repos := parseRepoListDNF5(input)
+	if len(repos) != 3 {
+		t.Fatalf("expected 3 repos, got %d", len(repos))
+	}
+	if repos[0].ID != "fedora" || !repos[0].Enabled {
+		t.Errorf("unexpected repo[0]: %+v", repos[0])
+	}
+	if repos[2].ID != "updates-testing" || repos[2].Enabled {
+		t.Errorf("unexpected repo[2]: %+v", repos[2])
 	}
 }
 

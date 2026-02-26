@@ -10,6 +10,8 @@ import (
 
 func available() bool { return false }
 
+func (d *DNF) detectVersion() {}
+
 func install(_ context.Context, _ []snack.Target, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
@@ -26,22 +28,22 @@ func update(_ context.Context) error {
 	return snack.ErrUnsupportedPlatform
 }
 
-func list(_ context.Context) ([]snack.Package, error) {
+func list(_ context.Context, _ bool) ([]snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
-func search(_ context.Context, _ string) ([]snack.Package, error) {
+func search(_ context.Context, _ string, _ bool) ([]snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
-func info(_ context.Context, _ string) (*snack.Package, error) {
+func info(_ context.Context, _ string, _ bool) (*snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
-func isInstalled(_ context.Context, _ string) (bool, error) {
+func isInstalled(_ context.Context, _ string, _ bool) (bool, error) {
 	return false, snack.ErrUnsupportedPlatform
 }
 
-func version(_ context.Context, _ string) (string, error) {
+func version(_ context.Context, _ string, _ bool) (string, error) {
 	return "", snack.ErrUnsupportedPlatform
 }

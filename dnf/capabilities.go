@@ -20,17 +20,17 @@ var (
 
 // LatestVersion returns the latest available version from configured repositories.
 func (d *DNF) LatestVersion(ctx context.Context, pkg string) (string, error) {
-	return latestVersion(ctx, pkg)
+	return latestVersion(ctx, pkg, d.v5)
 }
 
 // ListUpgrades returns packages that have newer versions available.
 func (d *DNF) ListUpgrades(ctx context.Context) ([]snack.Package, error) {
-	return listUpgrades(ctx)
+	return listUpgrades(ctx, d.v5)
 }
 
 // UpgradeAvailable reports whether a newer version is available.
 func (d *DNF) UpgradeAvailable(ctx context.Context, pkg string) (bool, error) {
-	return upgradeAvailable(ctx, pkg)
+	return upgradeAvailable(ctx, pkg, d.v5)
 }
 
 // VersionCmp compares two version strings using RPM version comparison.
@@ -83,7 +83,7 @@ func (d *DNF) Owner(ctx context.Context, path string) (string, error) {
 
 // ListRepos returns all configured package repositories.
 func (d *DNF) ListRepos(ctx context.Context) ([]snack.Repository, error) {
-	return listRepos(ctx)
+	return listRepos(ctx, d.v5)
 }
 
 // AddRepo adds a new package repository.
@@ -121,12 +121,12 @@ func (d *DNF) ListKeys(ctx context.Context) ([]string, error) {
 
 // GroupList returns all available package groups.
 func (d *DNF) GroupList(ctx context.Context) ([]string, error) {
-	return groupList(ctx)
+	return groupList(ctx, d.v5)
 }
 
 // GroupInfo returns the packages in a group.
 func (d *DNF) GroupInfo(ctx context.Context, group string) ([]snack.Package, error) {
-	return groupInfo(ctx, group)
+	return groupInfo(ctx, group, d.v5)
 }
 
 // GroupInstall installs all packages in a group.
