@@ -55,7 +55,7 @@ jobs:
   fedora:
     name: Fedora (dnf)
     runs-on: ubuntu-latest
-    container: fedora:latest
+    container: fedora:39  # last release with dnf4; dnf5 (fedora 40+) needs separate parser
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

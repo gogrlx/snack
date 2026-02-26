@@ -15,7 +15,8 @@ import (
 )
 
 func latestVersion(ctx context.Context, pkg string) (string, error) {
-	out, err := run(ctx, []string{"info", "--available", pkg}, snack.Options{})
+	// Try "dnf info <pkg>" which shows both installed and available
+	out, err := run(ctx, []string{"info", pkg}, snack.Options{})
 	if err != nil {
 		if strings.Contains(err.Error(), "exit status 1") {
 			return "", fmt.Errorf("dnf latestVersion %s: %w", pkg, snack.ErrNotFound)
