@@ -90,7 +90,7 @@ func (d *DNF) ListRepos(ctx context.Context) ([]snack.Repository, error) {
 func (d *DNF) AddRepo(ctx context.Context, repo snack.Repository) error {
 	d.Lock()
 	defer d.Unlock()
-	return addRepo(ctx, repo)
+	return addRepo(ctx, repo, d.v5)
 }
 
 // RemoveRepo removes a configured repository.
