@@ -7,34 +7,44 @@ import (
 	"github.com/gogrlx/snack"
 )
 
-// probeOrder defines the order in which package managers are probed.
-// The first available manager wins.
-var probeOrder = []struct {
-	name string
-	bin  string
-}{
-	{"pacman", "pacman"},
-	{"apk", "apk"},
-	{"apt", "apt-get"},
-	{"dnf", "dnf"},
-	{"rpm", "rpm"},
-	{"flatpak", "flatpak"},
-	{"snap", "snap"},
-	{"pkg", "pkg"},
-}
-
 // Default returns the first available package manager on the system.
 // Returns ErrManagerNotFound if no supported manager is detected.
 func Default() (snack.Manager, error) {
-	// TODO: implement — probe for each manager in order, return first match
+	for _, fn := range candidates() {
+		m := fn()
+		if m.Available() {
+			return m, nil
+		}
+	}
 	return nil, snack.ErrManagerNotFound
 }
 
 // All returns all available package managers on the system.
 func All() []snack.Manager {
-	// TODO: implement
-	return nil
+	var out []snack.Manager
+	for _, fn := range candidates() {
+		m := fn()
+		if m.Available() {
+			out = append(out, m)
+		}
+	}
+	return out
 }
+
+// ByName returns a specific manager by name, regardless of availability.
+// Returns ErrManagerNotFound if the name is not recognized.
+func ByName(name string) (snack.Manager, error) {
+	for _, fn := range allManagers() {
+		m := fn()
+		if m.Name() == name {
+			return m, nil
+		}
+	}
+	return nil, snack.ErrManagerNotFound
+}
+
+// managerFactory is a function that returns a new Manager instance.
+type managerFactory func() snack.Manager
 
 // HasBinary reports whether a binary is available in PATH.
 func HasBinary(name string) bool {
