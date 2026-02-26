@@ -56,7 +56,7 @@ func listRepos(_ context.Context, _ bool) ([]snack.Repository, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
-func addRepo(_ context.Context, _ snack.Repository) error {
+func addRepo(_ context.Context, _ snack.Repository, _ bool) error {
 	return snack.ErrUnsupportedPlatform
 }
 

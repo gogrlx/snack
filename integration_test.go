@@ -57,8 +57,14 @@ var distros = []distroTest{
 		packages: "./pacman/ ./detect/",
 	},
 	{
-		name:     "fedora-dnf",
+		name:     "fedora-dnf4",
 		image:    "fedora:39",
+		setup:    installGo("dnf install -y tree sudo wget"),
+		packages: "./dnf/ ./rpm/ ./detect/",
+	},
+	{
+		name:     "fedora-dnf5",
+		image:    "fedora:latest",
 		setup:    installGo("dnf install -y tree sudo wget"),
 		packages: "./dnf/ ./rpm/ ./detect/",
 	},

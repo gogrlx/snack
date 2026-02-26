@@ -171,8 +171,14 @@ func listRepos(ctx context.Context, v5 bool) ([]snack.Repository, error) {
 	return parseRepoList(out), nil
 }
 
-func addRepo(ctx context.Context, repo snack.Repository) error {
-	_, err := run(ctx, []string{"config-manager", "--add-repo", repo.URL}, snack.Options{})
+func addRepo(ctx context.Context, repo snack.Repository, v5 bool) error {
+	var args []string
+	if v5 {
+		args = []string{"config-manager", "addrepo", "--from-repofile=" + repo.URL}
+	} else {
+		args = []string{"config-manager", "--add-repo", repo.URL}
+	}
+	_, err := run(ctx, args, snack.Options{})
 	return err
 }
 

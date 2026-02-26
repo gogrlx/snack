@@ -12,6 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestIntegration_DNF_Detection(t *testing.T) {
+	d := dnf.New()
+	if !d.Available() {
+		t.Skip("dnf not available")
+	}
+	t.Logf("IsDNF5: %v", d.IsDNF5())
+}
+
 func TestIntegration_DNF(t *testing.T) {
 	var mgr snack.Manager = dnf.New()
 	if !mgr.Available() {
@@ -105,6 +113,18 @@ func TestIntegration_DNF(t *testing.T) {
 			groups, err := g.GroupList(ctx)
 			require.NoError(t, err)
 			_ = groups
+		}
+
+		if rm, ok := mgr.(snack.RepoManager); ok {
+			repos, err := rm.ListRepos(ctx)
+			require.NoError(t, err)
+			require.NotEmpty(t, repos, "should have at least one repo")
+			t.Logf("repos: %d", len(repos))
+		}
+
+		if nn, ok := mgr.(snack.NameNormalizer); ok {
+			got := nn.NormalizeName("curl.x86_64")
+			assert.Equal(t, "curl", got)
 		}
 	})
 }
