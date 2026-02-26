@@ -16,7 +16,7 @@ jobs:
           go-version-file: go.mod
       - run: go build ./...
       - run: go vet ./...
-      - run: go test -race -coverprofile=coverage-unit.out -coverpkg=./... ./...
+      - run: go test -race -coverprofile=coverage-unit.out ./...
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-unit
@@ -36,7 +36,7 @@ jobs:
           apt-get update
           apt-get install -y sudo tree curl
       - name: Integration tests
-        run: go test -v -tags integration -count=1 -coverprofile=coverage-debian.out -coverpkg=./... ./apt/ ./dpkg/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-debian.out ./apt/ ./dpkg/ ./detect/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -57,9 +57,9 @@ jobs:
           sudo apt-get install -y tree
           sudo snap install hello-world 2>/dev/null; sudo snap remove hello-world 2>/dev/null
       - name: Integration tests (apt)
-        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-ubuntu-apt.out -coverpkg=./... ./apt/ ./dpkg/ ./detect/
+        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-ubuntu-apt.out ./apt/ ./dpkg/ ./detect/
       - name: Integration tests (snap)
-        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-ubuntu-snap.out -coverpkg=./... ./snap/
+        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-ubuntu-snap.out ./snap/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -79,7 +79,7 @@ jobs:
         run: |
           dnf install -y tree sudo
       - name: Integration tests
-        run: go test -v -tags integration -count=1 -coverprofile=coverage-fedora39.out -coverpkg=./... ./dnf/ ./rpm/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-fedora39.out ./dnf/ ./rpm/ ./detect/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -99,7 +99,7 @@ jobs:
         run: |
           dnf install -y tree sudo
       - name: Integration tests
-        run: go test -v -tags integration -count=1 -coverprofile=coverage-fedora-latest.out -coverpkg=./... ./dnf/ ./rpm/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-fedora-latest.out ./dnf/ ./rpm/ ./detect/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -119,7 +119,7 @@ jobs:
         run: |
           apk add --no-cache sudo tree bash
       - name: Integration tests
-        run: go test -v -tags integration -count=1 -coverprofile=coverage-alpine.out -coverpkg=./... ./apk/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-alpine.out ./apk/ ./detect/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -140,7 +140,7 @@ jobs:
           pacman -Syu --noconfirm
           pacman -S --noconfirm sudo tree
       - name: Integration tests
-        run: go test -v -tags integration -count=1 -coverprofile=coverage-arch.out -coverpkg=./... ./pacman/ ./detect/
+        run: go test -v -tags integration -count=1 -coverprofile=coverage-arch.out ./pacman/ ./detect/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -164,7 +164,7 @@ jobs:
           sudo apt-get install -y flatpak
           sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: Integration tests
-        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-flatpak.out -coverpkg=./... ./flatpak/
+        run: sudo -E go test -v -tags integration -count=1 -coverprofile=coverage-flatpak.out ./flatpak/
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -13,7 +13,7 @@ import (
 )
 
 func TestIntegration_Apt(t *testing.T) {
-	mgr := apt.New()
+	var mgr snack.Manager = apt.New()
 	if !mgr.Available() {
 		t.Skip("apt not available")
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func TestIntegration_RPM(t *testing.T) {
-	mgr := rpm.New()
+	var mgr snack.Manager = rpm.New()
 	if !mgr.Available() {
 		t.Skip("rpm not available")
 	}

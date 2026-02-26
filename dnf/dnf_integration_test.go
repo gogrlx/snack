@@ -21,7 +21,7 @@ func TestIntegration_DNF_Detection(t *testing.T) {
 }
 
 func TestIntegration_DNF(t *testing.T) {
-	mgr := dnf.New()
+	var mgr snack.Manager = dnf.New()
 	if !mgr.Available() {
 		t.Skip("dnf not available")
 	}

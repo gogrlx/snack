@@ -13,7 +13,7 @@ import (
 )
 
 func TestIntegration_Snap(t *testing.T) {
-	mgr := snap.New()
+	var mgr snack.Manager = snap.New()
 	if !mgr.Available() {
 		t.Skip("snap not available")
 	}
