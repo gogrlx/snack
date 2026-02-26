@@ -55,7 +55,7 @@ jobs:
   fedora:
     name: Fedora (dnf)
     runs-on: ubuntu-latest
-    container: fedora:latest
+    container: fedora:41  # pin to dnf4; dnf5 (fedora 42+) has different output format
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

@@ -53,7 +53,7 @@ func TestIntegration_Dpkg(t *testing.T) {
 
 	t.Run("FileOwner", func(t *testing.T) {
 		if fo, ok := mgr.(snack.FileOwner); ok {
-			owner, err := fo.Owner(ctx, "/bin/bash")
+			owner, err := fo.Owner(ctx, "/usr/bin/bash")
 			require.NoError(t, err)
 			assert.NotEmpty(t, owner)
 

@@ -63,12 +63,12 @@ func TestIntegration_Flatpak(t *testing.T) {
 		require.NoError(t, err)
 		found := false
 		for _, p := range pkgs {
-			if p.Name == "com.github.tchx84.Flatseal" {
+			if p.Name == "Flatseal" || p.Description == "com.github.tchx84.Flatseal" {
 				found = true
 				break
 			}
 		}
-		assert.True(t, found, "Flatseal should be in installed list")
+		assert.True(t, found, "Flatseal should be in installed list (by Name or Application ID)")
 	})
 
 	t.Run("Remove", func(t *testing.T) {
