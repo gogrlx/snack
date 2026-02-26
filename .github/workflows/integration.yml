@@ -1,0 +1,118 @@
+name: Integration Tests
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  debian:
+    name: Debian (apt)
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Setup
+        run: |
+          apt-get update
+          apt-get install -y sudo tree curl
+      - name: Integration tests
+        run: go test -v -tags integration -count=1 ./apt/ ./dpkg/ ./detect/
+
+  ubuntu:
+    name: Ubuntu (apt + snap)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tree
+          sudo snap install hello-world 2>/dev/null; sudo snap remove hello-world 2>/dev/null
+      - name: Integration tests (apt)
+        run: sudo -E go test -v -tags integration -count=1 ./apt/ ./dpkg/ ./detect/
+      - name: Integration tests (snap)
+        run: sudo -E go test -v -tags integration -count=1 ./snap/
+
+  fedora:
+    name: Fedora (dnf)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Setup
+        run: |
+          dnf install -y tree sudo
+      - name: Integration tests
+        run: go test -v -tags integration -count=1 ./dnf/ ./rpm/ ./detect/
+
+  alpine:
+    name: Alpine (apk)
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Setup
+        run: |
+          apk add --no-cache sudo tree bash
+      - name: Integration tests
+        run: go test -v -tags integration -count=1 ./apk/ ./detect/
+
+  arch:
+    name: Arch Linux (pacman)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Setup
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm sudo tree
+      - name: Integration tests
+        run: go test -v -tags integration -count=1 ./pacman/ ./detect/
+
+  flatpak:
+    name: Ubuntu + Flatpak
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Verify flatpak not installed
+        run: |
+          if command -v flatpak &>/dev/null; then echo "already installed"; else echo "not installed — good"; fi
+      - name: Install flatpak
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      - name: Integration tests
+        run: sudo -E go test -v -tags integration -count=1 ./flatpak/
