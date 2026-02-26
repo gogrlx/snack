@@ -13,7 +13,7 @@ import (
 )
 
 func TestIntegration_Pacman(t *testing.T) {
-	mgr := pacman.New()
+	var mgr snack.Manager = pacman.New()
 	if !mgr.Available() {
 		t.Skip("pacman not available")
 	}

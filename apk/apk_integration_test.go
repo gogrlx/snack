@@ -13,7 +13,7 @@ import (
 )
 
 func TestIntegration_Apk(t *testing.T) {
-	mgr := apk.New()
+	var mgr snack.Manager = apk.New()
 	if !mgr.Available() {
 		t.Skip("apk not available")
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func TestIntegration_Flatpak(t *testing.T) {
-	mgr := flatpak.New()
+	var mgr snack.Manager = flatpak.New()
 	if !mgr.Available() {
 		t.Skip("flatpak not available — install it first")
 	}

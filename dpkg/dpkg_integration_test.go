@@ -13,7 +13,7 @@ import (
 )
 
 func TestIntegration_Dpkg(t *testing.T) {
-	mgr := dpkg.New()
+	var mgr snack.Manager = dpkg.New()
 	if !mgr.Available() {
 		t.Skip("dpkg not available")
 	}
