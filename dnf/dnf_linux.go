@@ -17,6 +17,20 @@ func available() bool {
 	return err == nil
 }
 
+// detectVersion checks whether the system dnf is dnf5 by inspecting
+// `dnf --version` output. dnf5 prints "dnf5 version 5.x.x".
+func (d *DNF) detectVersion() {
+	if d.v5Set {
+		return
+	}
+	d.v5Set = true
+	out, err := exec.Command("dnf", "--version").CombinedOutput()
+	if err != nil {
+		return
+	}
+	d.v5 = strings.Contains(string(out), "dnf5")
+}
+
 // buildArgs constructs the command name and argument list from the base args
 // and the provided options.
 func buildArgs(baseArgs []string, opts snack.Options) (string, []string) {
@@ -116,15 +130,25 @@ func update(ctx context.Context) error {
 	return err
 }
 
-func list(ctx context.Context) ([]snack.Package, error) {
-	out, err := run(ctx, []string{"list", "installed"}, snack.Options{})
+func listArgs(v5 bool) []string {
+	if v5 {
+		return []string{"list", "--installed"}
+	}
+	return []string{"list", "installed"}
+}
+
+func list(ctx context.Context, v5 bool) ([]snack.Package, error) {
+	out, err := run(ctx, listArgs(v5), snack.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("dnf list: %w", err)
+	}
+	if v5 {
+		return parseListDNF5(out), nil
 	}
 	return parseList(out), nil
 }
 
-func search(ctx context.Context, query string) ([]snack.Package, error) {
+func search(ctx context.Context, query string, v5 bool) ([]snack.Package, error) {
 	out, err := run(ctx, []string{"search", query}, snack.Options{})
 	if err != nil {
 		if strings.Contains(err.Error(), "exit status 1") {
@@ -132,10 +156,13 @@ func search(ctx context.Context, query string) ([]snack.Package, error) {
 		}
 		return nil, fmt.Errorf("dnf search: %w", err)
 	}
+	if v5 {
+		return parseSearchDNF5(out), nil
+	}
 	return parseSearch(out), nil
 }
 
-func info(ctx context.Context, pkg string) (*snack.Package, error) {
+func info(ctx context.Context, pkg string, v5 bool) (*snack.Package, error) {
 	out, err := run(ctx, []string{"info", pkg}, snack.Options{})
 	if err != nil {
 		if strings.Contains(err.Error(), "exit status 1") {
@@ -143,15 +170,24 @@ func info(ctx context.Context, pkg string) (*snack.Package, error) {
 		}
 		return nil, fmt.Errorf("dnf info: %w", err)
 	}
-	p := parseInfo(out)
+	var p *snack.Package
+	if v5 {
+		p = parseInfoDNF5(out)
+	} else {
+		p = parseInfo(out)
+	}
 	if p == nil {
 		return nil, fmt.Errorf("dnf info %s: %w", pkg, snack.ErrNotFound)
 	}
 	return p, nil
 }
 
-func isInstalled(ctx context.Context, pkg string) (bool, error) {
-	c := exec.CommandContext(ctx, "dnf", "list", "installed", pkg)
+func isInstalled(ctx context.Context, pkg string, v5 bool) (bool, error) {
+	args := []string{"list", "installed", pkg}
+	if v5 {
+		args = []string{"list", "--installed", pkg}
+	}
+	c := exec.CommandContext(ctx, "dnf", args...)
 	err := c.Run()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
@@ -162,15 +198,21 @@ func isInstalled(ctx context.Context, pkg string) (bool, error) {
 	return true, nil
 }
 
-func version(ctx context.Context, pkg string) (string, error) {
-	out, err := run(ctx, []string{"list", "installed", pkg}, snack.Options{})
+func version(ctx context.Context, pkg string, v5 bool) (string, error) {
+	args := append(listArgs(v5), pkg)
+	out, err := run(ctx, args, snack.Options{})
 	if err != nil {
 		if strings.Contains(err.Error(), "exit status 1") {
 			return "", fmt.Errorf("dnf version %s: %w", pkg, snack.ErrNotInstalled)
 		}
 		return "", fmt.Errorf("dnf version: %w", err)
 	}
-	pkgs := parseList(out)
+	var pkgs []snack.Package
+	if v5 {
+		pkgs = parseListDNF5(out)
+	} else {
+		pkgs = parseList(out)
+	}
 	if len(pkgs) == 0 {
 		return "", fmt.Errorf("dnf version %s: %w", pkg, snack.ErrNotInstalled)
 	}

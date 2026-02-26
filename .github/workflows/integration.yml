@@ -52,10 +52,25 @@ jobs:
       - name: Integration tests (snap)
         run: sudo -E go test -v -tags integration -count=1 ./snap/
 
-  fedora:
-    name: Fedora (dnf)
+  fedora-dnf4:
+    name: Fedora 39 (dnf4)
     runs-on: ubuntu-latest
-    container: fedora:39  # last release with dnf4; dnf5 (fedora 40+) needs separate parser
+    container: fedora:39
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Setup
+        run: |
+          dnf install -y tree sudo
+      - name: Integration tests
+        run: go test -v -tags integration -count=1 ./dnf/ ./rpm/ ./detect/
+
+  fedora-dnf5:
+    name: Fedora latest (dnf5)
+    runs-on: ubuntu-latest
+    container: fedora:latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

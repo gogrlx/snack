@@ -10,12 +10,19 @@ import (
 // DNF wraps the dnf package manager CLI.
 type DNF struct {
 	snack.Locker
+	v5    bool // true when the system dnf is dnf5
+	v5Set bool // true after detection has run
 }
 
 // New returns a new DNF manager.
 func New() *DNF {
-	return &DNF{}
+	d := &DNF{}
+	d.detectVersion()
+	return d
 }
+
+// IsDNF5 reports whether the underlying dnf binary is dnf5.
+func (d *DNF) IsDNF5() bool { return d.v5 }
 
 // Name returns "dnf".
 func (d *DNF) Name() string { return "dnf" }
@@ -60,27 +67,27 @@ func (d *DNF) Update(ctx context.Context) error {
 
 // List returns all installed packages.
 func (d *DNF) List(ctx context.Context) ([]snack.Package, error) {
-	return list(ctx)
+	return list(ctx, d.v5)
 }
 
 // Search queries the repositories for packages matching the query.
 func (d *DNF) Search(ctx context.Context, query string) ([]snack.Package, error) {
-	return search(ctx, query)
+	return search(ctx, query, d.v5)
 }
 
 // Info returns details about a specific package.
 func (d *DNF) Info(ctx context.Context, pkg string) (*snack.Package, error) {
-	return info(ctx, pkg)
+	return info(ctx, pkg, d.v5)
 }
 
 // IsInstalled reports whether a package is currently installed.
 func (d *DNF) IsInstalled(ctx context.Context, pkg string) (bool, error) {
-	return isInstalled(ctx, pkg)
+	return isInstalled(ctx, pkg, d.v5)
 }
 
 // Version returns the installed version of a package.
 func (d *DNF) Version(ctx context.Context, pkg string) (string, error) {
-	return version(ctx, pkg)
+	return version(ctx, pkg, d.v5)
 }
 
 // Verify interface compliance at compile time.
