@@ -1,6 +1,7 @@
 package dpkg
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gogrlx/snack"
@@ -73,14 +74,14 @@ func TestNew(t *testing.T) {
 
 func TestUpgradeUnsupported(t *testing.T) {
 	d := New()
-	if err := d.Upgrade(nil); err != snack.ErrUnsupportedPlatform {
+	if err := d.Upgrade(context.TODO()); err != snack.ErrUnsupportedPlatform {
 		t.Errorf("expected ErrUnsupportedPlatform, got %v", err)
 	}
 }
 
 func TestUpdateUnsupported(t *testing.T) {
 	d := New()
-	if err := d.Update(nil); err != snack.ErrUnsupportedPlatform {
+	if err := d.Update(context.TODO()); err != snack.ErrUnsupportedPlatform {
 		t.Errorf("expected ErrUnsupportedPlatform, got %v", err)
 	}
 }

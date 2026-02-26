@@ -37,36 +37,42 @@ func latestVersion(ctx context.Context, pkg string) (string, error) {
 }
 
 func listUpgrades(ctx context.Context) ([]snack.Package, error) {
-	cmd := exec.CommandContext(ctx, "apt", "list", "--upgradable")
-	cmd.Env = append(os.Environ(), "LANG=C")
+	// Use apt-get --just-print upgrade instead of `apt list --upgradable`
+	// because `apt` has unstable CLI output not intended for scripting.
+	cmd := exec.CommandContext(ctx, "apt-get", "--just-print", "upgrade")
+	cmd.Env = append(os.Environ(), "LANG=C", "DEBIAN_FRONTEND=noninteractive")
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("apt list --upgradable: %w", err)
+		return nil, fmt.Errorf("apt-get --just-print upgrade: %w", err)
 	}
 	var pkgs []snack.Package
 	for _, line := range strings.Split(string(out), "\n") {
 		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "Listing...") {
+		// Lines starting with "Inst " indicate upgradable packages.
+		// Format: "Inst pkg [old-ver] (new-ver repo [arch])"
+		if !strings.HasPrefix(line, "Inst ") {
 			continue
 		}
-		// Format: "pkg/source version arch [upgradable from: old-version]"
-		slashIdx := strings.Index(line, "/")
-		if slashIdx < 0 {
-			continue
-		}
-		name := line[:slashIdx]
-		rest := line[slashIdx+1:]
-		fields := strings.Fields(rest)
+		line = strings.TrimPrefix(line, "Inst ")
+		fields := strings.Fields(line)
 		if len(fields) < 2 {
+			continue
+		}
+		name := fields[0]
+		// Find the new version in parentheses
+		parenStart := strings.Index(line, "(")
+		parenEnd := strings.Index(line, ")")
+		if parenStart < 0 || parenEnd < 0 {
+			continue
+		}
+		verFields := strings.Fields(line[parenStart+1 : parenEnd])
+		if len(verFields) < 1 {
 			continue
 		}
 		p := snack.Package{
 			Name:      name,
-			Version:   fields[1],
+			Version:   verFields[0],
 			Installed: true,
-		}
-		if len(fields) > 2 {
-			p.Arch = fields[2]
 		}
 		pkgs = append(pkgs, p)
 	}
@@ -361,9 +367,7 @@ func listKeys(ctx context.Context) ([]string, error) {
 
 	// List keyring files
 	matches, _ := filepath.Glob("/etc/apt/keyrings/*.gpg")
-	for _, m := range matches {
-		keys = append(keys, m)
-	}
+	keys = append(keys, matches...)
 	ascMatches, _ := filepath.Glob("/etc/apt/keyrings/*.asc")
 	keys = append(keys, ascMatches...)
 
