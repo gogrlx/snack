@@ -34,11 +34,18 @@ func run(ctx context.Context, args []string) (string, error) {
 }
 
 func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
-	_ = snack.ApplyOptions(opts...)
+	o := snack.ApplyOptions(opts...)
 	var toInstall []snack.Target
 	var unchanged []string
 	for _, t := range pkgs {
-		ok, _ := isInstalled(ctx, t.Name)
+		if o.Reinstall || t.Version != "" || o.DryRun {
+			toInstall = append(toInstall, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
 		if ok {
 			unchanged = append(unchanged, t.Name)
 		} else {
@@ -63,11 +70,19 @@ func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (sn
 	return snack.InstallResult{Installed: installed, Unchanged: unchanged}, nil
 }
 
-func remove(ctx context.Context, pkgs []snack.Target, _ ...snack.Option) (snack.RemoveResult, error) {
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
+	o := snack.ApplyOptions(opts...)
 	var toRemove []snack.Target
 	var unchanged []string
 	for _, t := range pkgs {
-		ok, _ := isInstalled(ctx, t.Name)
+		if o.DryRun {
+			toRemove = append(toRemove, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.RemoveResult{}, err
+		}
 		if !ok {
 			unchanged = append(unchanged, t.Name)
 		} else {

@@ -78,10 +78,18 @@ func runAptGet(ctx context.Context, command string, pkgs []snack.Target, opts ..
 }
 
 func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	o := snack.ApplyOptions(opts...)
 	var toInstall []snack.Target
 	var unchanged []string
 	for _, t := range pkgs {
-		ok, _ := isInstalled(ctx, t.Name)
+		if o.Reinstall || t.Version != "" || o.DryRun {
+			toInstall = append(toInstall, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
 		if ok {
 			unchanged = append(unchanged, t.Name)
 		} else {
@@ -102,10 +110,18 @@ func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (sn
 }
 
 func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
+	o := snack.ApplyOptions(opts...)
 	var toRemove []snack.Target
 	var unchanged []string
 	for _, t := range pkgs {
-		ok, _ := isInstalled(ctx, t.Name)
+		if o.DryRun {
+			toRemove = append(toRemove, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.RemoveResult{}, err
+		}
 		if !ok {
 			unchanged = append(unchanged, t.Name)
 		} else {

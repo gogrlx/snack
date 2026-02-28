@@ -90,17 +90,24 @@ func formatTargets(targets []snack.Target) []string {
 }
 
 func install(ctx context.Context, v5 bool, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	o := snack.ApplyOptions(opts...)
 	var toInstall []snack.Target
 	var unchanged []string
 	for _, t := range pkgs {
-		ok, _ := isInstalled(ctx, t.Name, v5)
+		if o.Reinstall || t.Version != "" || o.DryRun {
+			toInstall = append(toInstall, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name, v5)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
 		if ok {
 			unchanged = append(unchanged, t.Name)
 		} else {
 			toInstall = append(toInstall, t)
 		}
 	}
-	o := snack.ApplyOptions(opts...)
 	if len(toInstall) > 0 {
 		base := []string{"install", "-y"}
 		if o.Refresh {
@@ -132,17 +139,24 @@ func install(ctx context.Context, v5 bool, pkgs []snack.Target, opts ...snack.Op
 }
 
 func remove(ctx context.Context, v5 bool, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
+	o := snack.ApplyOptions(opts...)
 	var toRemove []snack.Target
 	var unchanged []string
 	for _, t := range pkgs {
-		ok, _ := isInstalled(ctx, t.Name, v5)
+		if o.DryRun {
+			toRemove = append(toRemove, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name, v5)
+		if err != nil {
+			return snack.RemoveResult{}, err
+		}
 		if !ok {
 			unchanged = append(unchanged, t.Name)
 		} else {
 			toRemove = append(toRemove, t)
 		}
 	}
-	o := snack.ApplyOptions(opts...)
 	if len(toRemove) > 0 {
 		args := append([]string{"remove", "-y"}, snack.TargetNames(toRemove)...)
 		if _, err := run(ctx, args, o); err != nil {
