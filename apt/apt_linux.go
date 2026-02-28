@@ -232,18 +232,23 @@ func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Opt
 		}
 	}
 	if len(toUpgrade) > 0 {
-		// Use --only-upgrade to ensure we don't install new packages.
-		args := buildArgs("install", toUpgrade, opts...)
-		idx := -1
-		for i, a := range args {
-			if a == "install" {
-				idx = i
-				break
-			}
+		// Build args manually to inject --only-upgrade after the install command.
+		o2 := snack.ApplyOptions(opts...)
+		var args []string
+		if o2.Sudo {
+			args = append(args, "sudo")
 		}
-		if idx >= 0 {
-			args = append(args[:idx+1], append([]string{"--only-upgrade"}, args[idx+1:]...)...)
+		args = append(args, "apt-get", "install", "--only-upgrade")
+		if o2.AssumeYes {
+			args = append(args, "-y")
 		}
+		if o2.DryRun {
+			args = append(args, "--dry-run")
+		}
+		if o2.FromRepo != "" {
+			args = append(args, "-t", o2.FromRepo)
+		}
+		args = append(args, formatTargets(toUpgrade)...)
 		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 		var stderr bytes.Buffer
 		cmd.Stderr = &stderr
