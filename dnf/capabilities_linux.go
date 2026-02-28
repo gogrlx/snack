@@ -114,18 +114,11 @@ func listHeld(ctx context.Context, v5 bool) ([]snack.Package, error) {
 }
 
 func isHeld(ctx context.Context, pkg string, v5 bool) (bool, error) {
-	out, err := run(ctx, []string{"versionlock", "list", pkg}, snack.Options{})
+	held, err := listHeld(ctx, v5)
 	if err != nil {
-		// versionlock list exits non-zero when no match is found on some versions
-		return false, nil
+		return false, err
 	}
-	var pkgs []snack.Package
-	if v5 {
-		pkgs = parseVersionLockDNF5(out)
-	} else {
-		pkgs = parseVersionLock(out)
-	}
-	for _, p := range pkgs {
+	for _, p := range held {
 		if p.Name == pkg {
 			return true, nil
 		}
