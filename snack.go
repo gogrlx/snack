@@ -199,3 +199,18 @@ type NameNormalizer interface {
 	// Returns the name without arch and the arch string.
 	ParseArch(name string) (string, string)
 }
+
+// DryRunner reports whether a Manager backend natively supports dry-run mode.
+// Backends that implement this interface honor [WithDryRun] in Install, Remove,
+// Purge, and Upgrade and pass the appropriate flag to the underlying CLI
+// (e.g. apt-get --dry-run, apk --simulate, dnf --setopt=tsflags=test,
+// pacman --print).
+//
+// Backends that do NOT implement this interface (snap, flatpak, rpm, ports)
+// silently ignore [WithDryRun].
+//
+// Supported by: apt, apk, dnf, pacman.
+type DryRunner interface {
+	// SupportsDryRun reports whether this backend honors [WithDryRun].
+	SupportsDryRun() bool
+}

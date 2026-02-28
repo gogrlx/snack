@@ -196,6 +196,9 @@ func (a *Apt) ParseArch(name string) (string, string) {
 	return parseArch(name)
 }
 
+// SupportsDryRun reports that apt honors [snack.WithDryRun] via --dry-run.
+func (a *Apt) SupportsDryRun() bool { return true }
+
 // Compile-time interface checks.
 var (
 	_ snack.Manager        = (*Apt)(nil)
@@ -206,4 +209,5 @@ var (
 	_ snack.RepoManager    = (*Apt)(nil)
 	_ snack.KeyManager     = (*Apt)(nil)
 	_ snack.NameNormalizer = (*Apt)(nil)
+	_ snack.DryRunner      = (*Apt)(nil)
 )

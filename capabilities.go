@@ -12,6 +12,7 @@ type Capabilities struct {
 	KeyManagement  bool
 	Groups         bool
 	NameNormalize  bool
+	DryRun         bool
 }
 
 // GetCapabilities probes a Manager for all optional interface support.
@@ -24,6 +25,7 @@ func GetCapabilities(m Manager) Capabilities {
 	_, km := m.(KeyManager)
 	_, g := m.(Grouper)
 	_, nn := m.(NameNormalizer)
+	_, dr := m.(DryRunner)
 	return Capabilities{
 		VersionQuery:   vq,
 		Hold:           h,
@@ -33,5 +35,6 @@ func GetCapabilities(m Manager) Capabilities {
 		KeyManagement:  km,
 		Groups:         g,
 		NameNormalize:  nn,
+		DryRun:         dr,
 	}
 }

@@ -16,7 +16,11 @@ var (
 	_ snack.KeyManager     = (*DNF)(nil)
 	_ snack.Grouper        = (*DNF)(nil)
 	_ snack.NameNormalizer = (*DNF)(nil)
+	_ snack.DryRunner      = (*DNF)(nil)
 )
+
+// SupportsDryRun reports that dnf honors [snack.WithDryRun] via --setopt=tsflags=test.
+func (d *DNF) SupportsDryRun() bool { return true }
 
 // LatestVersion returns the latest available version from configured repositories.
 func (d *DNF) LatestVersion(ctx context.Context, pkg string) (string, error) {
