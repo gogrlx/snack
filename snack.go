@@ -194,7 +194,6 @@ type Grouper interface {
 	GroupIsInstalled(ctx context.Context, group string) (bool, error)
 }
 
-
 // NormalizeName provides package name normalization.
 // Supported by: apt (strips :arch suffixes), rpm.
 type NameNormalizer interface {
