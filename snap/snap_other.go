@@ -65,3 +65,7 @@ func upgradeAvailable(_ context.Context, _ string) (bool, error) {
 func versionCmp(_ context.Context, _, _ string) (int, error) {
 	return 0, snack.ErrUnsupportedPlatform
 }
+
+func upgradePackages(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
+	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
+}

@@ -83,3 +83,11 @@ func (s *Snap) Version(ctx context.Context, pkg string) (string, error) {
 
 // Verify interface compliance at compile time.
 var _ snack.Manager = (*Snap)(nil)
+var _ snack.PackageUpgrader = (*Snap)(nil)
+
+// UpgradePackages upgrades specific installed packages.
+func (s *Snap) UpgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	s.Lock()
+	defer s.Unlock()
+	return upgradePackages(ctx, pkgs, opts...)
+}

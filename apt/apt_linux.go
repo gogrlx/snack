@@ -211,3 +211,50 @@ func version(ctx context.Context, pkg string) (string, error) {
 	}
 	return v, nil
 }
+
+func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	o := snack.ApplyOptions(opts...)
+	var toUpgrade []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		if o.DryRun {
+			toUpgrade = append(toUpgrade, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
+		if !ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toUpgrade = append(toUpgrade, t)
+		}
+	}
+	if len(toUpgrade) > 0 {
+		// Use --only-upgrade to ensure we don't install new packages.
+		args := buildArgs("install", toUpgrade, opts...)
+		idx := -1
+		for i, a := range args {
+			if a == "install" {
+				idx = i
+				break
+			}
+		}
+		if idx >= 0 {
+			args = append(args[:idx+1], append([]string{"--only-upgrade"}, args[idx+1:]...)...)
+		}
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			return snack.InstallResult{}, fmt.Errorf("apt-get install --only-upgrade: %w: %s", err, stderr.String())
+		}
+	}
+	var upgraded []snack.Package
+	for _, t := range toUpgrade {
+		v, _ := version(ctx, t.Name)
+		upgraded = append(upgraded, snack.Package{Name: t.Name, Version: v, Installed: true})
+	}
+	return snack.InstallResult{Installed: upgraded, Unchanged: unchanged}, nil
+}

@@ -19,6 +19,7 @@ func New() *Apk {
 
 // compile-time check
 var _ snack.Manager = (*Apk)(nil)
+var _ snack.PackageUpgrader = (*Apk)(nil)
 
 // Name returns "apk".
 func (a *Apk) Name() string { return "apk" }
@@ -84,4 +85,11 @@ func (a *Apk) IsInstalled(ctx context.Context, pkg string) (bool, error) {
 // Version returns the installed version of a package.
 func (a *Apk) Version(ctx context.Context, pkg string) (string, error) {
 	return version(ctx, pkg)
+}
+
+// UpgradePackages upgrades specific installed packages.
+func (a *Apk) UpgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	a.Lock()
+	defer a.Unlock()
+	return upgradePackages(ctx, pkgs, opts...)
 }

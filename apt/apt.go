@@ -206,13 +206,21 @@ func (a *Apt) SupportsDryRun() bool { return true }
 
 // Compile-time interface checks.
 var (
-	_ snack.Manager        = (*Apt)(nil)
-	_ snack.VersionQuerier = (*Apt)(nil)
-	_ snack.Holder         = (*Apt)(nil)
-	_ snack.Cleaner        = (*Apt)(nil)
-	_ snack.FileOwner      = (*Apt)(nil)
-	_ snack.RepoManager    = (*Apt)(nil)
-	_ snack.KeyManager     = (*Apt)(nil)
-	_ snack.NameNormalizer = (*Apt)(nil)
-	_ snack.DryRunner      = (*Apt)(nil)
+	_ snack.Manager         = (*Apt)(nil)
+	_ snack.VersionQuerier  = (*Apt)(nil)
+	_ snack.Holder          = (*Apt)(nil)
+	_ snack.Cleaner         = (*Apt)(nil)
+	_ snack.FileOwner       = (*Apt)(nil)
+	_ snack.RepoManager     = (*Apt)(nil)
+	_ snack.KeyManager      = (*Apt)(nil)
+	_ snack.NameNormalizer  = (*Apt)(nil)
+	_ snack.DryRunner       = (*Apt)(nil)
+	_ snack.PackageUpgrader = (*Apt)(nil)
 )
+
+// UpgradePackages upgrades specific installed packages.
+func (a *Apt) UpgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	a.Lock()
+	defer a.Unlock()
+	return upgradePackages(ctx, pkgs, opts...)
+}

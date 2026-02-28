@@ -93,3 +93,11 @@ func (d *DNF) Version(ctx context.Context, pkg string) (string, error) {
 
 // Verify interface compliance at compile time.
 var _ snack.Manager = (*DNF)(nil)
+var _ snack.PackageUpgrader = (*DNF)(nil)
+
+// UpgradePackages upgrades specific installed packages.
+func (d *DNF) UpgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	d.Lock()
+	defer d.Unlock()
+	return upgradePackages(ctx, d.v5, pkgs, opts...)
+}

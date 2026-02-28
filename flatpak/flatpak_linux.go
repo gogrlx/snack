@@ -197,3 +197,41 @@ func removeRepo(ctx context.Context, id string) error {
 	_, err := run(ctx, []string{"remote-delete", id})
 	return err
 }
+
+func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	o := snack.ApplyOptions(opts...)
+	var toUpgrade []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		if o.DryRun {
+			toUpgrade = append(toUpgrade, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
+		if !ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toUpgrade = append(toUpgrade, t)
+		}
+	}
+	if len(toUpgrade) > 0 {
+		for _, t := range toUpgrade {
+			args := []string{"update", "-y", t.Name}
+			cmd := exec.CommandContext(ctx, "flatpak", args...)
+			var stderr bytes.Buffer
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return snack.InstallResult{}, fmt.Errorf("flatpak update %s: %w: %s", t.Name, err, stderr.String())
+			}
+		}
+	}
+	var upgraded []snack.Package
+	for _, t := range toUpgrade {
+		v, _ := version(ctx, t.Name)
+		upgraded = append(upgraded, snack.Package{Name: t.Name, Version: v, Installed: true})
+	}
+	return snack.InstallResult{Installed: upgraded, Unchanged: unchanged}, nil
+}

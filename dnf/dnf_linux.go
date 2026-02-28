@@ -269,3 +269,37 @@ func version(ctx context.Context, pkg string, v5 bool) (string, error) {
 	}
 	return pkgs[0].Version, nil
 }
+
+func upgradePackages(ctx context.Context, v5 bool, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	o := snack.ApplyOptions(opts...)
+	var toUpgrade []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		if o.DryRun {
+			toUpgrade = append(toUpgrade, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name, v5)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
+		if !ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toUpgrade = append(toUpgrade, t)
+		}
+	}
+	if len(toUpgrade) > 0 {
+		base := []string{"upgrade"}
+		args := append(base, formatTargets(toUpgrade)...)
+		if _, err := run(ctx, args, o); err != nil {
+			return snack.InstallResult{}, err
+		}
+	}
+	var upgraded []snack.Package
+	for _, t := range toUpgrade {
+		v, _ := version(ctx, t.Name, v5)
+		upgraded = append(upgraded, snack.Package{Name: t.Name, Version: v, Installed: true})
+	}
+	return snack.InstallResult{Installed: upgraded, Unchanged: unchanged}, nil
+}
