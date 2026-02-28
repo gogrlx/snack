@@ -3,42 +3,44 @@ package detect
 
 import (
 	"os/exec"
-	"sync"
+	"sync/atomic"
 
 	"github.com/gogrlx/snack"
 )
 
-var (
-	defaultOnce sync.Once
-	defaultMgr  snack.Manager
-	defaultErr  error
-)
+type detected struct {
+	mgr snack.Manager
+	err error
+}
+
+var result atomic.Pointer[detected]
 
 // Default returns the first available package manager on the system.
-// The result is cached after the first call.
+// The result is cached after the first successful detection.
 // Returns ErrManagerNotFound if no supported manager is detected.
+// Multiple goroutines may probe simultaneously on the first call; this is
+// harmless because Available() is read-only and all goroutines store
+// equivalent results.
 func Default() (snack.Manager, error) {
-	defaultOnce.Do(func() {
-		for _, fn := range candidates() {
-			m := fn()
-			if m.Available() {
-				defaultMgr = m
-				return
-			}
+	if r := result.Load(); r != nil {
+		return r.mgr, r.err
+	}
+	for _, fn := range candidates() {
+		m := fn()
+		if m.Available() {
+			result.Store(&detected{mgr: m})
+			return m, nil
 		}
-		defaultErr = snack.ErrManagerNotFound
-	})
-	return defaultMgr, defaultErr
+	}
+	r := &detected{err: snack.ErrManagerNotFound}
+	result.Store(r)
+	return r.mgr, r.err
 }
 
 // Reset clears the cached result of Default(), forcing re-detection on the
-// next call. This is intended for use in tests or dynamic environments where
-// the available package managers may change.
-// Reset is not safe to call concurrently with Default().
+// next call. This is safe to call concurrently with Default().
 func Reset() {
-	defaultOnce = sync.Once{}
-	defaultMgr = nil
-	defaultErr = nil
+	result.Store(nil)
 }
 
 // All returns all available package managers on the system.
