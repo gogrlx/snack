@@ -124,6 +124,11 @@ func (a *Apt) ListHeld(ctx context.Context) ([]snack.Package, error) {
 	return listHeld(ctx)
 }
 
+// IsHeld reports whether a specific package is currently held.
+func (a *Apt) IsHeld(ctx context.Context, pkg string) (bool, error) {
+	return isHeld(ctx, pkg)
+}
+
 // Autoremove removes packages no longer required as dependencies.
 func (a *Apt) Autoremove(ctx context.Context, opts ...snack.Option) error {
 	a.Lock()

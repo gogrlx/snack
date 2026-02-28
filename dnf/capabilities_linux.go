@@ -113,6 +113,26 @@ func listHeld(ctx context.Context, v5 bool) ([]snack.Package, error) {
 	return parseVersionLock(out), nil
 }
 
+func isHeld(ctx context.Context, pkg string, v5 bool) (bool, error) {
+	out, err := run(ctx, []string{"versionlock", "list", pkg}, snack.Options{})
+	if err != nil {
+		// versionlock list exits non-zero when no match is found on some versions
+		return false, nil
+	}
+	var pkgs []snack.Package
+	if v5 {
+		pkgs = parseVersionLockDNF5(out)
+	} else {
+		pkgs = parseVersionLock(out)
+	}
+	for _, p := range pkgs {
+		if p.Name == pkg {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func autoremove(ctx context.Context, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
 	_, err := run(ctx, []string{"autoremove", "-y"}, o)
