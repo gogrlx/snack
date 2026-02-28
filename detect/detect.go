@@ -3,20 +3,42 @@ package detect
 
 import (
 	"os/exec"
+	"sync"
 
 	"github.com/gogrlx/snack"
 )
 
+var (
+	defaultOnce sync.Once
+	defaultMgr  snack.Manager
+	defaultErr  error
+)
+
 // Default returns the first available package manager on the system.
+// The result is cached after the first call.
 // Returns ErrManagerNotFound if no supported manager is detected.
 func Default() (snack.Manager, error) {
-	for _, fn := range candidates() {
-		m := fn()
-		if m.Available() {
-			return m, nil
+	defaultOnce.Do(func() {
+		for _, fn := range candidates() {
+			m := fn()
+			if m.Available() {
+				defaultMgr = m
+				return
+			}
 		}
-	}
-	return nil, snack.ErrManagerNotFound
+		defaultErr = snack.ErrManagerNotFound
+	})
+	return defaultMgr, defaultErr
+}
+
+// Reset clears the cached result of Default(), forcing re-detection on the
+// next call. This is intended for use in tests or dynamic environments where
+// the available package managers may change.
+// Reset is not safe to call concurrently with Default().
+func Reset() {
+	defaultOnce = sync.Once{}
+	defaultMgr = nil
+	defaultErr = nil
 }
 
 // All returns all available package managers on the system.
