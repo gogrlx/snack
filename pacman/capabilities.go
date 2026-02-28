@@ -78,3 +78,8 @@ func (p *Pacman) GroupInstall(ctx context.Context, group string, opts ...snack.O
 	defer p.Unlock()
 	return groupInstall(ctx, group, opts...)
 }
+
+// GroupIsInstalled reports whether all packages in the group are installed.
+func (p *Pacman) GroupIsInstalled(ctx context.Context, group string) (bool, error) {
+	return groupIsInstalled(ctx, group)
+}

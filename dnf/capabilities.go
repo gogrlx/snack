@@ -136,6 +136,11 @@ func (d *DNF) GroupInstall(ctx context.Context, group string, opts ...snack.Opti
 	return groupInstall(ctx, group, opts...)
 }
 
+// GroupIsInstalled reports whether all packages in the group are installed.
+func (d *DNF) GroupIsInstalled(ctx context.Context, group string) (bool, error) {
+	return groupIsInstalled(ctx, group, d.v5)
+}
+
 // NormalizeName returns the canonical form of a package name.
 func (d *DNF) NormalizeName(name string) string {
 	return normalizeName(name)

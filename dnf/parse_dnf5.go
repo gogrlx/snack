@@ -188,6 +188,39 @@ func parseGroupListDNF5(output string) []string {
 	return groups
 }
 
+// parseGroupIsInstalledDNF5 checks whether a named group is installed from
+// `dnf5 group list` tabular output. A group is installed when its status field is "yes".
+func parseGroupIsInstalledDNF5(output, group string) bool {
+	output = stripPreamble(output)
+	inBody := false
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		if !inBody {
+			if strings.HasPrefix(trimmed, "ID") && strings.Contains(trimmed, "Name") {
+				inBody = true
+				continue
+			}
+			continue
+		}
+		parts := strings.Fields(trimmed)
+		if len(parts) < 3 {
+			continue
+		}
+		status := parts[len(parts)-1]
+		if status != "yes" && status != "no" {
+			continue
+		}
+		name := strings.Join(parts[1:len(parts)-1], " ")
+		if strings.EqualFold(name, group) {
+			return status == "yes"
+		}
+	}
+	return false
+}
+
 // parseVersionLockDNF5 parses `dnf5 versionlock list` output.
 // Format:
 //

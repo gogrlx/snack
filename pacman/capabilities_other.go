@@ -51,3 +51,7 @@ func groupInfo(_ context.Context, _ string) ([]snack.Package, error) {
 func groupInstall(_ context.Context, _ string, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
+
+func groupIsInstalled(_ context.Context, _ string) (bool, error) {
+	return false, snack.ErrUnsupportedPlatform
+}

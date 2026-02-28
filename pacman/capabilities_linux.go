@@ -219,3 +219,50 @@ func groupInstall(ctx context.Context, group string, opts ...snack.Option) error
 	_, err := run(ctx, []string{"-S", "--noconfirm", group}, o)
 	return err
 }
+
+// parseGroupPkgSet parses "group pkg" lines and returns the set of package names.
+func parseGroupPkgSet(output string) map[string]struct{} {
+	set := make(map[string]struct{})
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		parts := strings.Fields(line)
+		if len(parts) >= 2 {
+			set[parts[1]] = struct{}{}
+		}
+	}
+	return set
+}
+
+func groupIsInstalled(ctx context.Context, group string) (bool, error) {
+	// Get all packages in the group from the sync database.
+	availOut, err := run(ctx, []string{"-Sg", group}, snack.Options{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 1") {
+			return false, fmt.Errorf("pacman groupIsInstalled %s: %w", group, snack.ErrNotFound)
+		}
+		return false, fmt.Errorf("pacman groupIsInstalled: %w", err)
+	}
+	avail := parseGroupPkgSet(availOut)
+	if len(avail) == 0 {
+		return false, fmt.Errorf("pacman groupIsInstalled %s: %w", group, snack.ErrNotFound)
+	}
+	// Get packages from the group that are installed (local database).
+	instOut, err := run(ctx, []string{"-Qg", group}, snack.Options{})
+	if err != nil {
+		// exit status 1 means nothing from this group is installed.
+		if strings.Contains(err.Error(), "exit status 1") {
+			return false, nil
+		}
+		return false, fmt.Errorf("pacman groupIsInstalled: %w", err)
+	}
+	inst := parseGroupPkgSet(instOut)
+	for pkg := range avail {
+		if _, ok := inst[pkg]; !ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}

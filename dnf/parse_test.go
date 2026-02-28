@@ -186,6 +186,43 @@ func TestParseGroupInfo(t *testing.T) {
 	}
 }
 
+func TestParseGroupIsInstalled(t *testing.T) {
+	input := `Available Groups:
+   Container Management
+   Development Tools
+   Headless Management
+Installed Groups:
+   Minimal Install
+   Server
+`
+	tests := []struct {
+		group string
+		want  bool
+	}{
+		{"Minimal Install", true},
+		{"Server", true},
+		{"Development Tools", false},
+		{"Container Management", false},
+		{"Nonexistent Group", false},
+	}
+	for _, tt := range tests {
+		got := parseGroupIsInstalled(input, tt.group)
+		if got != tt.want {
+			t.Errorf("parseGroupIsInstalled(%q) = %v, want %v", tt.group, got, tt.want)
+		}
+	}
+
+	// Verify that empty lines within the Installed section don't stop parsing.
+	inputWithBlankLines := `Installed Groups:
+   First Group
+
+   Second Group
+`
+	if !parseGroupIsInstalled(inputWithBlankLines, "Second Group") {
+		t.Error("parseGroupIsInstalled: should find group after blank line in installed section")
+	}
+}
+
 func TestNormalizeName(t *testing.T) {
 	tests := []struct {
 		input, want string
@@ -335,6 +372,27 @@ kde-desktop                 KDE                                                n
 	}
 	if groups[1] != "KDE" {
 		t.Errorf("groups[1] = %q", groups[1])
+	}
+}
+
+func TestParseGroupIsInstalledDNF5(t *testing.T) {
+	input := `ID                          Name                                        Installed
+neuron-modelling-simulators Neuron Modelling Simulators                        no
+kde-desktop                 KDE                                                yes
+`
+	tests := []struct {
+		group string
+		want  bool
+	}{
+		{"KDE", true},
+		{"Neuron Modelling Simulators", false},
+		{"Nonexistent Group", false},
+	}
+	for _, tt := range tests {
+		got := parseGroupIsInstalledDNF5(input, tt.group)
+		if got != tt.want {
+			t.Errorf("parseGroupIsInstalledDNF5(%q) = %v, want %v", tt.group, got, tt.want)
+		}
 	}
 }
 

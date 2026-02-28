@@ -186,6 +186,9 @@ type Grouper interface {
 
 	// GroupInstall installs all packages in a group.
 	GroupInstall(ctx context.Context, group string, opts ...Option) error
+
+	// GroupIsInstalled reports whether all packages in the group are installed.
+	GroupIsInstalled(ctx context.Context, group string) (bool, error)
 }
 
 // NormalizeName provides package name normalization.
