@@ -12,12 +12,12 @@ func available() bool { return false }
 
 func (d *DNF) detectVersion() {}
 
-func install(_ context.Context, _ []snack.Target, _ ...snack.Option) error {
-	return snack.ErrUnsupportedPlatform
+func install(_ context.Context, _ bool, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
+	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
 }
 
-func remove(_ context.Context, _ []snack.Target, _ ...snack.Option) error {
-	return snack.ErrUnsupportedPlatform
+func remove(_ context.Context, _ bool, _ []snack.Target, _ ...snack.Option) (snack.RemoveResult, error) {
+	return snack.RemoveResult{}, snack.ErrUnsupportedPlatform
 }
 
 func upgrade(_ context.Context, _ ...snack.Option) error {

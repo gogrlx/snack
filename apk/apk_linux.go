@@ -66,16 +66,69 @@ func formatTargets(targets []snack.Target) []string {
 	return args
 }
 
-func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
-	args := append([]string{"add"}, formatTargets(pkgs)...)
-	_, err := run(ctx, args, opts...)
-	return err
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	o := snack.ApplyOptions(opts...)
+	var toInstall []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		if o.Reinstall || t.Version != "" || o.DryRun {
+			toInstall = append(toInstall, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
+		if ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toInstall = append(toInstall, t)
+		}
+	}
+	if len(toInstall) > 0 {
+		args := append([]string{"add"}, formatTargets(toInstall)...)
+		if _, err := run(ctx, args, opts...); err != nil {
+			return snack.InstallResult{}, err
+		}
+	}
+	var installed []snack.Package
+	for _, t := range toInstall {
+		v, _ := version(ctx, t.Name)
+		installed = append(installed, snack.Package{Name: t.Name, Version: v, Installed: true})
+	}
+	return snack.InstallResult{Installed: installed, Unchanged: unchanged}, nil
 }
 
-func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
-	args := append([]string{"del"}, snack.TargetNames(pkgs)...)
-	_, err := run(ctx, args, opts...)
-	return err
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
+	o := snack.ApplyOptions(opts...)
+	var toRemove []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		if o.DryRun {
+			toRemove = append(toRemove, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.RemoveResult{}, err
+		}
+		if !ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toRemove = append(toRemove, t)
+		}
+	}
+	if len(toRemove) > 0 {
+		args := append([]string{"del"}, snack.TargetNames(toRemove)...)
+		if _, err := run(ctx, args, opts...); err != nil {
+			return snack.RemoveResult{}, err
+		}
+	}
+	var removed []snack.Package
+	for _, t := range toRemove {
+		removed = append(removed, snack.Package{Name: t.Name})
+	}
+	return snack.RemoveResult{Removed: removed, Unchanged: unchanged}, nil
 }
 
 func purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {

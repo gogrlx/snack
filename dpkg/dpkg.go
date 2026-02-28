@@ -21,14 +21,14 @@ func New() *Dpkg {
 func (d *Dpkg) Name() string { return "dpkg" }
 
 // Install one or more .deb files.
-func (d *Dpkg) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (d *Dpkg) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	d.Lock()
 	defer d.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (d *Dpkg) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (d *Dpkg) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	d.Lock()
 	defer d.Unlock()
 	return remove(ctx, pkgs, opts...)

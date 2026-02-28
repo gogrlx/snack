@@ -1,5 +1,25 @@
 package snack
 
+// InstallResult holds the outcome of an Install operation.
+type InstallResult struct {
+	// Installed contains packages that were newly installed by this operation.
+	Installed []Package
+	// Updated contains packages that were upgraded by this operation.
+	Updated []Package
+	// Unchanged contains the names of packages that were already at the
+	// desired state and required no action.
+	Unchanged []string
+}
+
+// RemoveResult holds the outcome of a Remove operation.
+type RemoveResult struct {
+	// Removed contains packages that were removed by this operation.
+	Removed []Package
+	// Unchanged contains the names of packages that were not installed
+	// and required no action.
+	Unchanged []string
+}
+
 // Package represents a system package.
 type Package struct {
 	Name        string `json:"name"`

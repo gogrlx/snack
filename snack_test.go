@@ -115,3 +115,39 @@ func TestErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestInstallResult(t *testing.T) {
+	r := snack.InstallResult{
+		Installed: []snack.Package{{Name: "nginx", Version: "1.24.0", Installed: true}},
+		Unchanged: []string{"curl"},
+	}
+	assert.Len(t, r.Installed, 1)
+	assert.Equal(t, "nginx", r.Installed[0].Name)
+	assert.Equal(t, "1.24.0", r.Installed[0].Version)
+	assert.True(t, r.Installed[0].Installed)
+	assert.Empty(t, r.Updated)
+	assert.Equal(t, []string{"curl"}, r.Unchanged)
+}
+
+func TestRemoveResult(t *testing.T) {
+	r := snack.RemoveResult{
+		Removed:   []snack.Package{{Name: "nginx", Version: "1.24.0"}},
+		Unchanged: []string{"wget"},
+	}
+	assert.Len(t, r.Removed, 1)
+	assert.Equal(t, "nginx", r.Removed[0].Name)
+	assert.Equal(t, []string{"wget"}, r.Unchanged)
+}
+
+func TestInstallResult_Zero(t *testing.T) {
+	var r snack.InstallResult
+	assert.Nil(t, r.Installed)
+	assert.Nil(t, r.Updated)
+	assert.Nil(t, r.Unchanged)
+}
+
+func TestRemoveResult_Zero(t *testing.T) {
+	var r snack.RemoveResult
+	assert.Nil(t, r.Removed)
+	assert.Nil(t, r.Unchanged)
+}

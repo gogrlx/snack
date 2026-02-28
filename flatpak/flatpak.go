@@ -24,14 +24,14 @@ func (f *Flatpak) Name() string { return "flatpak" }
 func (f *Flatpak) Available() bool { return available() }
 
 // Install one or more packages.
-func (f *Flatpak) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (f *Flatpak) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	f.Lock()
 	defer f.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (f *Flatpak) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (f *Flatpak) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	f.Lock()
 	defer f.Unlock()
 	return remove(ctx, pkgs, opts...)

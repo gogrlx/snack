@@ -102,7 +102,8 @@ func installCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return m.Install(cmd.Context(), targets(args, ver), opts()...)
+			_, err = m.Install(cmd.Context(), targets(args, ver), opts()...)
+			return err
 		},
 	}
 	cmd.Flags().StringVar(&ver, "version", "", "pin version for all targets")
@@ -119,7 +120,8 @@ func removeCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return m.Remove(cmd.Context(), snack.Targets(args...), opts()...)
+			_, err = m.Remove(cmd.Context(), snack.Targets(args...), opts()...)
+			return err
 		},
 	}
 }

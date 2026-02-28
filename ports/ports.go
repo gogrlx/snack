@@ -24,14 +24,14 @@ func (p *Ports) Name() string { return "ports" }
 func (p *Ports) Available() bool { return available() }
 
 // Install one or more packages.
-func (p *Ports) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (p *Ports) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	p.Lock()
 	defer p.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (p *Ports) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (p *Ports) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	p.Lock()
 	defer p.Unlock()
 	return remove(ctx, pkgs, opts...)

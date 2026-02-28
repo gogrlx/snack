@@ -24,14 +24,14 @@ func (p *Pkg) Name() string { return "pkg" }
 func (p *Pkg) Available() bool { return available() }
 
 // Install one or more packages.
-func (p *Pkg) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (p *Pkg) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	p.Lock()
 	defer p.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (p *Pkg) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (p *Pkg) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	p.Lock()
 	defer p.Unlock()
 	return remove(ctx, pkgs, opts...)

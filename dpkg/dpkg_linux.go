@@ -17,55 +17,101 @@ func available() bool {
 	return err == nil
 }
 
-func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	o := snack.ApplyOptions(opts...)
-	var args []string
-	if o.Sudo {
-		args = append(args, "sudo")
-	}
-	args = append(args, "dpkg", "-i")
-	if o.DryRun {
-		args = append(args, "--simulate")
-	}
-	// dpkg -i takes file paths; use Source if set, otherwise Name
+	var toInstall []snack.Target
+	var unchanged []string
 	for _, t := range pkgs {
-		if t.Source != "" {
-			args = append(args, t.Source)
+		if o.Reinstall || t.Version != "" || o.DryRun {
+			toInstall = append(toInstall, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
+		if ok {
+			unchanged = append(unchanged, t.Name)
 		} else {
-			args = append(args, t.Name)
+			toInstall = append(toInstall, t)
 		}
 	}
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		errMsg := stderr.String()
-		if strings.Contains(errMsg, "Permission denied") || strings.Contains(errMsg, "are you root") {
-			return fmt.Errorf("dpkg -i: %w", snack.ErrPermissionDenied)
+	if len(toInstall) > 0 {
+		var args []string
+		if o.Sudo {
+			args = append(args, "sudo")
 		}
-		return fmt.Errorf("dpkg -i: %w: %s", err, errMsg)
+		args = append(args, "dpkg", "-i")
+		if o.DryRun {
+			args = append(args, "--simulate")
+		}
+		for _, t := range toInstall {
+			if t.Source != "" {
+				args = append(args, t.Source)
+			} else {
+				args = append(args, t.Name)
+			}
+		}
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			errMsg := stderr.String()
+			if strings.Contains(errMsg, "Permission denied") || strings.Contains(errMsg, "are you root") {
+				return snack.InstallResult{}, fmt.Errorf("dpkg -i: %w", snack.ErrPermissionDenied)
+			}
+			return snack.InstallResult{}, fmt.Errorf("dpkg -i: %w: %s", err, errMsg)
+		}
 	}
-	return nil
+	var installed []snack.Package
+	for _, t := range toInstall {
+		v, _ := version(ctx, t.Name)
+		installed = append(installed, snack.Package{Name: t.Name, Version: v, Installed: true})
+	}
+	return snack.InstallResult{Installed: installed, Unchanged: unchanged}, nil
 }
 
-func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	o := snack.ApplyOptions(opts...)
-	var args []string
-	if o.Sudo {
-		args = append(args, "sudo")
+	var toRemove []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		if o.DryRun {
+			toRemove = append(toRemove, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.RemoveResult{}, err
+		}
+		if !ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toRemove = append(toRemove, t)
+		}
 	}
-	args = append(args, "dpkg", "-r")
-	if o.DryRun {
-		args = append(args, "--simulate")
+	if len(toRemove) > 0 {
+		var args []string
+		if o.Sudo {
+			args = append(args, "sudo")
+		}
+		args = append(args, "dpkg", "-r")
+		if o.DryRun {
+			args = append(args, "--simulate")
+		}
+		args = append(args, snack.TargetNames(toRemove)...)
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			return snack.RemoveResult{}, fmt.Errorf("dpkg -r: %w: %s", err, stderr.String())
+		}
 	}
-	args = append(args, snack.TargetNames(pkgs)...)
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("dpkg -r: %w: %s", err, stderr.String())
+	var removed []snack.Package
+	for _, t := range toRemove {
+		removed = append(removed, snack.Package{Name: t.Name})
 	}
-	return nil
+	return snack.RemoveResult{Removed: removed, Unchanged: unchanged}, nil
 }
 
 func purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
