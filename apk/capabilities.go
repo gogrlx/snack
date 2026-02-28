@@ -11,7 +11,11 @@ var (
 	_ snack.VersionQuerier = (*Apk)(nil)
 	_ snack.Cleaner        = (*Apk)(nil)
 	_ snack.FileOwner      = (*Apk)(nil)
+	_ snack.DryRunner      = (*Apk)(nil)
 )
+
+// SupportsDryRun reports that apk honors [snack.WithDryRun] via --simulate.
+func (a *Apk) SupportsDryRun() bool { return true }
 
 // LatestVersion returns the latest available version from configured repositories.
 func (a *Apk) LatestVersion(ctx context.Context, pkg string) (string, error) {

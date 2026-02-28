@@ -91,6 +91,7 @@ func TestGetCapabilities_NilSafe(t *testing.T) {
 	assert.False(t, caps.KeyManagement)
 	assert.False(t, caps.Groups)
 	assert.False(t, caps.NameNormalize)
+	assert.False(t, caps.DryRun)
 }
 
 func TestErrors(t *testing.T) {

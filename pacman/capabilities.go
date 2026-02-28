@@ -13,11 +13,15 @@ var (
 	_ snack.FileOwner      = (*Pacman)(nil)
 	_ snack.Grouper        = (*Pacman)(nil)
 	_ snack.GroupQuerier   = (*Pacman)(nil)
+	_ snack.DryRunner      = (*Pacman)(nil)
 )
 
 // NOTE: snack.Holder is not implemented for pacman. While pacman supports
 // IgnorePkg in /etc/pacman.conf, there is no clean CLI command to hold/unhold
 // packages. pacman-contrib provides some tooling but it's not standard.
+
+// SupportsDryRun reports that pacman honors [snack.WithDryRun] via --print.
+func (p *Pacman) SupportsDryRun() bool { return true }
 
 // LatestVersion returns the latest available version from configured repositories.
 func (p *Pacman) LatestVersion(ctx context.Context, pkg string) (string, error) {
