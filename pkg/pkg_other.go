@@ -49,3 +49,7 @@ func isInstalled(_ context.Context, _ string) (bool, error) {
 func version(_ context.Context, _ string) (string, error) {
 	return "", snack.ErrUnsupportedPlatform
 }
+
+func upgradePackages(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
+	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
+}

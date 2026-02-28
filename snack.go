@@ -220,3 +220,15 @@ type DryRunner interface {
 	// SupportsDryRun reports whether this backend honors [WithDryRun].
 	SupportsDryRun() bool
 }
+
+// PackageUpgrader provides targeted package upgrades (as opposed to Upgrade
+// which upgrades everything). Backends that implement this use native upgrade
+// commands that only act on already-installed packages.
+//
+// Supported by: apt, dnf, pacman, apk, pkg (FreeBSD), flatpak, snap.
+type PackageUpgrader interface {
+	// UpgradePackages upgrades specific installed packages to their latest
+	// versions. Packages that are not installed are skipped (not installed).
+	// Returns an InstallResult describing what changed.
+	UpgradePackages(ctx context.Context, pkgs []Target, opts ...Option) (InstallResult, error)
+}

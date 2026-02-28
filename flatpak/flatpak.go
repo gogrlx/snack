@@ -83,3 +83,11 @@ func (f *Flatpak) Version(ctx context.Context, pkg string) (string, error) {
 
 // Verify interface compliance at compile time.
 var _ snack.Manager = (*Flatpak)(nil)
+var _ snack.PackageUpgrader = (*Flatpak)(nil)
+
+// UpgradePackages upgrades specific installed packages.
+func (f *Flatpak) UpgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	f.Lock()
+	defer f.Unlock()
+	return upgradePackages(ctx, pkgs, opts...)
+}

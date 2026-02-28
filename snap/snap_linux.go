@@ -231,3 +231,40 @@ func upgradeAvailable(ctx context.Context, pkg string) (bool, error) {
 func versionCmp(_ context.Context, ver1, ver2 string) (int, error) {
 	return semverCmp(ver1, ver2), nil
 }
+
+func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
+	o := snack.ApplyOptions(opts...)
+	var toUpgrade []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		if o.DryRun {
+			toUpgrade = append(toUpgrade, t)
+			continue
+		}
+		ok, err := isInstalled(ctx, t.Name)
+		if err != nil {
+			return snack.InstallResult{}, err
+		}
+		if !ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toUpgrade = append(toUpgrade, t)
+		}
+	}
+	if len(toUpgrade) > 0 {
+		for _, t := range toUpgrade {
+			cmd := exec.CommandContext(ctx, "snap", "refresh", t.Name)
+			var stderr bytes.Buffer
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return snack.InstallResult{}, fmt.Errorf("snap refresh %s: %w: %s", t.Name, err, stderr.String())
+			}
+		}
+	}
+	var upgraded []snack.Package
+	for _, t := range toUpgrade {
+		v, _ := version(ctx, t.Name)
+		upgraded = append(upgraded, snack.Package{Name: t.Name, Version: v, Installed: true})
+	}
+	return snack.InstallResult{Installed: upgraded, Unchanged: unchanged}, nil
+}

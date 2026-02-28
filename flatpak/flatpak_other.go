@@ -61,3 +61,7 @@ func addRepo(_ context.Context, _ snack.Repository) error {
 func removeRepo(_ context.Context, _ string) error {
 	return snack.ErrUnsupportedPlatform
 }
+
+func upgradePackages(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
+	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
+}
