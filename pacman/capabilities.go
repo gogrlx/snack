@@ -12,6 +12,7 @@ var (
 	_ snack.Cleaner        = (*Pacman)(nil)
 	_ snack.FileOwner      = (*Pacman)(nil)
 	_ snack.Grouper        = (*Pacman)(nil)
+	_ snack.GroupQuerier   = (*Pacman)(nil)
 )
 
 // NOTE: snack.Holder is not implemented for pacman. While pacman supports
@@ -77,4 +78,9 @@ func (p *Pacman) GroupInstall(ctx context.Context, group string, opts ...snack.O
 	p.Lock()
 	defer p.Unlock()
 	return groupInstall(ctx, group, opts...)
+}
+
+// GroupIsInstalled reports whether all packages in the group are installed.
+func (p *Pacman) GroupIsInstalled(ctx context.Context, group string) (bool, error) {
+	return groupIsInstalled(ctx, group)
 }

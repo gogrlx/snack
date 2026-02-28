@@ -265,6 +265,26 @@ func parseGroupList(output string) []string {
 	return groups
 }
 
+// parseGroupIsInstalled checks whether a named group appears under "Installed Groups:"
+// in `dnf group list` output.
+func parseGroupIsInstalled(output, group string) bool {
+	inInstalled := false
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasSuffix(trimmed, "Groups:") || strings.HasSuffix(trimmed, "groups:") {
+			inInstalled = strings.HasPrefix(strings.ToLower(trimmed), "installed")
+			continue
+		}
+		if !inInstalled || trimmed == "" {
+			continue
+		}
+		if strings.EqualFold(trimmed, group) {
+			return true
+		}
+	}
+	return false
+}
+
 // parseGroupInfo parses `dnf group info <group>` output.
 // Packages are listed under section headers like "Mandatory Packages:", "Default Packages:", "Optional Packages:".
 func parseGroupInfo(output string) []snack.Package {

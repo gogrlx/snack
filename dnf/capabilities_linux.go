@@ -264,3 +264,14 @@ func groupInstall(ctx context.Context, group string, opts ...snack.Option) error
 	_, err := run(ctx, []string{"group", "install", "-y", group}, o)
 	return err
 }
+
+func groupIsInstalled(ctx context.Context, group string, v5 bool) (bool, error) {
+	out, err := run(ctx, []string{"group", "list"}, snack.Options{})
+	if err != nil {
+		return false, fmt.Errorf("dnf groupIsInstalled: %w", err)
+	}
+	if v5 {
+		return parseGroupIsInstalledDNF5(out, group), nil
+	}
+	return parseGroupIsInstalled(out, group), nil
+}
