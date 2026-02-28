@@ -101,9 +101,13 @@ func (d *Dpkg) ParseArch(name string) (string, string) {
 	return parseArch(name)
 }
 
+// SupportsDryRun reports that dpkg honors [snack.WithDryRun] via --simulate.
+func (d *Dpkg) SupportsDryRun() bool { return true }
+
 // Compile-time interface checks.
 var (
 	_ snack.Manager        = (*Dpkg)(nil)
 	_ snack.FileOwner      = (*Dpkg)(nil)
 	_ snack.NameNormalizer = (*Dpkg)(nil)
+	_ snack.DryRunner      = (*Dpkg)(nil)
 )
