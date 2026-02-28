@@ -36,6 +36,10 @@ func listHeld(_ context.Context, _ bool) ([]snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
+func isHeld(_ context.Context, _ string, _ bool) (bool, error) {
+	return false, snack.ErrUnsupportedPlatform
+}
+
 func autoremove(_ context.Context, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }

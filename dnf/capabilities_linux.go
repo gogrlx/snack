@@ -113,6 +113,19 @@ func listHeld(ctx context.Context, v5 bool) ([]snack.Package, error) {
 	return parseVersionLock(out), nil
 }
 
+func isHeld(ctx context.Context, pkg string, v5 bool) (bool, error) {
+	held, err := listHeld(ctx, v5)
+	if err != nil {
+		return false, err
+	}
+	for _, p := range held {
+		if p.Name == pkg {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func autoremove(ctx context.Context, opts ...snack.Option) error {
 	o := snack.ApplyOptions(opts...)
 	_, err := run(ctx, []string{"autoremove", "-y"}, o)

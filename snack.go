@@ -125,6 +125,9 @@ type Holder interface {
 
 	// ListHeld returns all currently held/pinned packages.
 	ListHeld(ctx context.Context) ([]Package, error)
+
+	// IsHeld reports whether a specific package is currently held/pinned.
+	IsHeld(ctx context.Context, pkg string) (bool, error)
 }
 
 // Cleaner provides orphan/cache cleanup operations.

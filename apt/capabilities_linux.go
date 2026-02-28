@@ -159,6 +159,15 @@ func listHeld(ctx context.Context) ([]snack.Package, error) {
 	return pkgs, nil
 }
 
+func isHeld(ctx context.Context, pkg string) (bool, error) {
+	cmd := exec.CommandContext(ctx, "apt-mark", "showhold", pkg)
+	out, err := cmd.Output()
+	if err != nil {
+		return false, fmt.Errorf("apt-mark showhold %s: %w", pkg, err)
+	}
+	return strings.TrimSpace(string(out)) == pkg, nil
+}
+
 // --- Cleaner ---
 
 func autoremove(ctx context.Context, opts ...snack.Option) error {

@@ -62,6 +62,11 @@ func (d *DNF) ListHeld(ctx context.Context) ([]snack.Package, error) {
 	return listHeld(ctx, d.v5)
 }
 
+// IsHeld reports whether a specific package is currently held.
+func (d *DNF) IsHeld(ctx context.Context, pkg string) (bool, error) {
+	return isHeld(ctx, pkg, d.v5)
+}
+
 // Autoremove removes orphaned packages.
 func (d *DNF) Autoremove(ctx context.Context, opts ...snack.Option) error {
 	d.Lock()

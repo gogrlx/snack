@@ -230,6 +230,16 @@ func TestIntegration_Apt(t *testing.T) {
 			require.NoError(t, err)
 		})
 
+		t.Run("IsHeld", func(t *testing.T) {
+			held, err := h.IsHeld(ctx, "tree")
+			require.NoError(t, err)
+			assert.True(t, held, "tree should be held")
+
+			notHeld, err := h.IsHeld(ctx, "curl")
+			require.NoError(t, err)
+			assert.False(t, notHeld, "curl should not be held")
+		})
+
 		t.Run("ListHeld", func(t *testing.T) {
 			held, err := h.ListHeld(ctx)
 			require.NoError(t, err)
