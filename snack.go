@@ -186,7 +186,12 @@ type Grouper interface {
 
 	// GroupInstall installs all packages in a group.
 	GroupInstall(ctx context.Context, group string, opts ...Option) error
+}
 
+// GroupQuerier provides an efficient check for whether a package group is
+// fully installed. This is an optional extension of [Grouper].
+// Supported by: pacman, dnf/yum.
+type GroupQuerier interface {
 	// GroupIsInstalled reports whether all packages in the group are installed.
 	GroupIsInstalled(ctx context.Context, group string) (bool, error)
 }

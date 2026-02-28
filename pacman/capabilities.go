@@ -12,6 +12,7 @@ var (
 	_ snack.Cleaner        = (*Pacman)(nil)
 	_ snack.FileOwner      = (*Pacman)(nil)
 	_ snack.Grouper        = (*Pacman)(nil)
+	_ snack.GroupQuerier   = (*Pacman)(nil)
 )
 
 // NOTE: snack.Holder is not implemented for pacman. While pacman supports

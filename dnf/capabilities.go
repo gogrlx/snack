@@ -15,6 +15,7 @@ var (
 	_ snack.RepoManager    = (*DNF)(nil)
 	_ snack.KeyManager     = (*DNF)(nil)
 	_ snack.Grouper        = (*DNF)(nil)
+	_ snack.GroupQuerier   = (*DNF)(nil)
 	_ snack.NameNormalizer = (*DNF)(nil)
 )
 
