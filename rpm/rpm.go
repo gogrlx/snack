@@ -24,14 +24,14 @@ func (r *RPM) Name() string { return "rpm" }
 func (r *RPM) Available() bool { return available() }
 
 // Install one or more packages.
-func (r *RPM) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (r *RPM) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	r.Lock()
 	defer r.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (r *RPM) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (r *RPM) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	r.Lock()
 	defer r.Unlock()
 	return remove(ctx, pkgs, opts...)
@@ -41,7 +41,8 @@ func (r *RPM) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Opt
 func (r *RPM) Purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	r.Lock()
 	defer r.Unlock()
-	return remove(ctx, pkgs, opts...)
+	_, err := remove(ctx, pkgs, opts...)
+	return err
 }
 
 // Upgrade upgrades packages from files.

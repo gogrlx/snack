@@ -24,14 +24,14 @@ func (p *Pacman) Name() string { return "pacman" }
 func (p *Pacman) Available() bool { return available() }
 
 // Install one or more packages.
-func (p *Pacman) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (p *Pacman) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	p.Lock()
 	defer p.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (p *Pacman) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (p *Pacman) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	p.Lock()
 	defer p.Unlock()
 	return remove(ctx, pkgs, opts...)

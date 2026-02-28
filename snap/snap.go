@@ -24,14 +24,14 @@ func (s *Snap) Name() string { return "snap" }
 func (s *Snap) Available() bool { return available() }
 
 // Install one or more packages.
-func (s *Snap) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (s *Snap) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	s.Lock()
 	defer s.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (s *Snap) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (s *Snap) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	s.Lock()
 	defer s.Unlock()
 	return remove(ctx, pkgs, opts...)

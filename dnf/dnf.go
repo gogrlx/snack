@@ -31,24 +31,25 @@ func (d *DNF) Name() string { return "dnf" }
 func (d *DNF) Available() bool { return available() }
 
 // Install one or more packages.
-func (d *DNF) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (d *DNF) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	d.Lock()
 	defer d.Unlock()
-	return install(ctx, pkgs, opts...)
+	return install(ctx, d.v5, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (d *DNF) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (d *DNF) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	d.Lock()
 	defer d.Unlock()
-	return remove(ctx, pkgs, opts...)
+	return remove(ctx, d.v5, pkgs, opts...)
 }
 
 // Purge removes packages including configuration files (same as Remove for dnf).
 func (d *DNF) Purge(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
 	d.Lock()
 	defer d.Unlock()
-	return remove(ctx, pkgs, opts...)
+	_, err := remove(ctx, d.v5, pkgs, opts...)
+	return err
 }
 
 // Upgrade all installed packages to their latest versions.

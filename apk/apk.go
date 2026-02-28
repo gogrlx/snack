@@ -27,14 +27,14 @@ func (a *Apk) Name() string { return "apk" }
 func (a *Apk) Available() bool { return available() }
 
 // Install one or more packages.
-func (a *Apk) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (a *Apk) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	a.Lock()
 	defer a.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (a *Apk) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (a *Apk) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	a.Lock()
 	defer a.Unlock()
 	return remove(ctx, pkgs, opts...)

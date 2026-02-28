@@ -21,14 +21,14 @@ func New() *Apt {
 func (a *Apt) Name() string { return "apt" }
 
 // Install one or more packages.
-func (a *Apt) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (a *Apt) Install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	a.Lock()
 	defer a.Unlock()
 	return install(ctx, pkgs, opts...)
 }
 
 // Remove one or more packages.
-func (a *Apt) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func (a *Apt) Remove(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.RemoveResult, error) {
 	a.Lock()
 	defer a.Unlock()
 	return remove(ctx, pkgs, opts...)

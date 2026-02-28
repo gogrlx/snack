@@ -58,11 +58,11 @@ func Targets(names ...string) []Target {
 //	    log.Warn("hold not supported by", mgr.Name())
 //	}
 type Manager interface {
-	// Install one or more packages.
-	Install(ctx context.Context, pkgs []Target, opts ...Option) error
+	// Install one or more packages. Returns a result describing what changed.
+	Install(ctx context.Context, pkgs []Target, opts ...Option) (InstallResult, error)
 
-	// Remove one or more packages.
-	Remove(ctx context.Context, pkgs []Target, opts ...Option) error
+	// Remove one or more packages. Returns a result describing what changed.
+	Remove(ctx context.Context, pkgs []Target, opts ...Option) (RemoveResult, error)
 
 	// Purge one or more packages (remove including config files).
 	Purge(ctx context.Context, pkgs []Target, opts ...Option) error

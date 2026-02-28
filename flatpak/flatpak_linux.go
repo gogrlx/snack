@@ -33,25 +33,58 @@ func run(ctx context.Context, args []string) (string, error) {
 	return stdout.String(), nil
 }
 
-func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) error {
+func install(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	_ = snack.ApplyOptions(opts...)
+	var toInstall []snack.Target
+	var unchanged []string
 	for _, t := range pkgs {
+		ok, _ := isInstalled(ctx, t.Name)
+		if ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toInstall = append(toInstall, t)
+		}
+	}
+	for _, t := range toInstall {
 		remote := t.FromRepo
 		if remote == "" {
 			remote = "flathub"
 		}
 		args := []string{"install", "-y", remote, t.Name}
 		if _, err := run(ctx, args); err != nil {
-			return err
+			return snack.InstallResult{}, err
 		}
 	}
-	return nil
+	var installed []snack.Package
+	for _, t := range toInstall {
+		v, _ := version(ctx, t.Name)
+		installed = append(installed, snack.Package{Name: t.Name, Version: v, Installed: true})
+	}
+	return snack.InstallResult{Installed: installed, Unchanged: unchanged}, nil
 }
 
-func remove(ctx context.Context, pkgs []snack.Target, _ ...snack.Option) error {
-	args := append([]string{"uninstall", "-y"}, snack.TargetNames(pkgs)...)
-	_, err := run(ctx, args)
-	return err
+func remove(ctx context.Context, pkgs []snack.Target, _ ...snack.Option) (snack.RemoveResult, error) {
+	var toRemove []snack.Target
+	var unchanged []string
+	for _, t := range pkgs {
+		ok, _ := isInstalled(ctx, t.Name)
+		if !ok {
+			unchanged = append(unchanged, t.Name)
+		} else {
+			toRemove = append(toRemove, t)
+		}
+	}
+	if len(toRemove) > 0 {
+		args := append([]string{"uninstall", "-y"}, snack.TargetNames(toRemove)...)
+		if _, err := run(ctx, args); err != nil {
+			return snack.RemoveResult{}, err
+		}
+	}
+	var removed []snack.Package
+	for _, t := range toRemove {
+		removed = append(removed, snack.Package{Name: t.Name})
+	}
+	return snack.RemoveResult{Removed: removed, Unchanged: unchanged}, nil
 }
 
 func purge(ctx context.Context, pkgs []snack.Target, _ ...snack.Option) error {
