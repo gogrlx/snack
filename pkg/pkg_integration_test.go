@@ -38,7 +38,7 @@ func TestIntegration_Pkg(t *testing.T) {
 	})
 
 	t.Run("Install", func(t *testing.T) {
-		err := mgr.Install(ctx, snack.Targets("tree"), snack.WithSudo(), snack.WithAssumeYes())
+		_, err := mgr.Install(ctx, snack.Targets("tree"), snack.WithSudo(), snack.WithAssumeYes())
 		require.NoError(t, err)
 	})
 
@@ -68,7 +68,7 @@ func TestIntegration_Pkg(t *testing.T) {
 	})
 
 	t.Run("Remove", func(t *testing.T) {
-		err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithSudo(), snack.WithAssumeYes())
+		_, err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithSudo(), snack.WithAssumeYes())
 		require.NoError(t, err)
 	})
 

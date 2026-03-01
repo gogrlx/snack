@@ -61,8 +61,8 @@ func TestIntegration_Snap(t *testing.T) {
 	})
 
 	t.Run("Install", func(t *testing.T) {
-		_ = mgr.Remove(ctx, snack.Targets("hello-world"), snack.WithSudo())
-		err := mgr.Install(ctx, snack.Targets("hello-world"), snack.WithSudo())
+		_, _ = mgr.Remove(ctx, snack.Targets("hello-world"), snack.WithSudo())
+		_, err := mgr.Install(ctx, snack.Targets("hello-world"), snack.WithSudo())
 		require.NoError(t, err)
 	})
 
@@ -152,7 +152,7 @@ func TestIntegration_Snap(t *testing.T) {
 	})
 
 	t.Run("Remove", func(t *testing.T) {
-		err := mgr.Remove(ctx, snack.Targets("hello-world"), snack.WithSudo())
+		_, err := mgr.Remove(ctx, snack.Targets("hello-world"), snack.WithSudo())
 		require.NoError(t, err)
 
 		installed, err := mgr.IsInstalled(ctx, "hello-world")
@@ -161,7 +161,7 @@ func TestIntegration_Snap(t *testing.T) {
 	})
 
 	t.Run("Purge", func(t *testing.T) {
-		_ = mgr.Install(ctx, snack.Targets("hello-world"), snack.WithSudo())
+		_, _ = mgr.Install(ctx, snack.Targets("hello-world"), snack.WithSudo())
 		err := mgr.Purge(ctx, snack.Targets("hello-world"), snack.WithSudo())
 		require.NoError(t, err)
 	})

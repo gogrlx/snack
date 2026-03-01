@@ -75,9 +75,9 @@ func TestIntegration_Apt(t *testing.T) {
 
 	t.Run("Install_Single", func(t *testing.T) {
 		// Remove first to ensure clean state
-		_ = mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, _ = mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 
-		err := mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, err := mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 		require.NoError(t, err)
 	})
 
@@ -127,7 +127,7 @@ func TestIntegration_Apt(t *testing.T) {
 		ver, err := mgr.Version(ctx, "tree")
 		require.NoError(t, err)
 
-		err = mgr.Install(ctx, []snack.Target{{Name: "tree", Version: ver}}, snack.WithAssumeYes())
+		_, err = mgr.Install(ctx, []snack.Target{{Name: "tree", Version: ver}}, snack.WithAssumeYes())
 		// Should succeed (already installed at that version) or be a no-op
 		// Some apt versions may return success, others may note it's already installed
 		_ = err
@@ -135,7 +135,7 @@ func TestIntegration_Apt(t *testing.T) {
 
 	t.Run("Purge", func(t *testing.T) {
 		// Install then purge (removes config files too)
-		_ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, _ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 		err := mgr.Purge(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 		require.NoError(t, err)
 
@@ -145,7 +145,7 @@ func TestIntegration_Apt(t *testing.T) {
 	})
 
 	t.Run("Install_Multiple", func(t *testing.T) {
-		err := mgr.Install(ctx, snack.Targets("tree", "less"), snack.WithAssumeYes())
+		_, err := mgr.Install(ctx, snack.Targets("tree", "less"), snack.WithAssumeYes())
 		require.NoError(t, err)
 
 		for _, pkg := range []string{"tree", "less"} {
@@ -156,7 +156,7 @@ func TestIntegration_Apt(t *testing.T) {
 	})
 
 	t.Run("Remove", func(t *testing.T) {
-		err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 		require.NoError(t, err)
 
 		installed, err := mgr.IsInstalled(ctx, "tree")
@@ -223,7 +223,7 @@ func TestIntegration_Apt(t *testing.T) {
 		require.True(t, ok, "apt must implement Holder")
 
 		// Ensure tree is installed for hold tests
-		_ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, _ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 
 		t.Run("Hold", func(t *testing.T) {
 			err := h.Hold(ctx, []string{"tree"})
@@ -287,7 +287,7 @@ func TestIntegration_Apt(t *testing.T) {
 		require.True(t, ok, "apt must implement FileOwner")
 
 		// Ensure tree is installed
-		_ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, _ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 
 		t.Run("FileList", func(t *testing.T) {
 			files, err := fo.FileList(ctx, "tree")
@@ -379,5 +379,5 @@ func TestIntegration_Apt(t *testing.T) {
 	})
 
 	// Cleanup
-	_ = mgr.Remove(ctx, snack.Targets("tree", "less"), snack.WithAssumeYes())
+	_, _ = mgr.Remove(ctx, snack.Targets("tree", "less"), snack.WithAssumeYes())
 }
