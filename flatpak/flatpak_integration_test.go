@@ -67,7 +67,7 @@ func TestIntegration_Flatpak(t *testing.T) {
 	})
 
 	t.Run("Install", func(t *testing.T) {
-		err := mgr.Install(ctx, snack.Targets("com.github.tchx84.Flatseal"), snack.WithSudo(), snack.WithAssumeYes())
+		_, err := mgr.Install(ctx, snack.Targets("com.github.tchx84.Flatseal"), snack.WithSudo(), snack.WithAssumeYes())
 		require.NoError(t, err)
 	})
 
@@ -121,7 +121,7 @@ func TestIntegration_Flatpak(t *testing.T) {
 	})
 
 	t.Run("Remove", func(t *testing.T) {
-		err := mgr.Remove(ctx, snack.Targets("com.github.tchx84.Flatseal"), snack.WithSudo(), snack.WithAssumeYes())
+		_, err := mgr.Remove(ctx, snack.Targets("com.github.tchx84.Flatseal"), snack.WithSudo(), snack.WithAssumeYes())
 		require.NoError(t, err)
 	})
 

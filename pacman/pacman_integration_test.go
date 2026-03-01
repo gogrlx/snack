@@ -71,8 +71,8 @@ func TestIntegration_Pacman(t *testing.T) {
 	})
 
 	t.Run("Install_Single", func(t *testing.T) {
-		_ = mgr.Remove(ctx, snack.Targets("tree"))
-		err := mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, _ = mgr.Remove(ctx, snack.Targets("tree"))
+		_, err := mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 		require.NoError(t, err)
 	})
 
@@ -117,7 +117,7 @@ func TestIntegration_Pacman(t *testing.T) {
 	})
 
 	t.Run("Install_Multiple", func(t *testing.T) {
-		err := mgr.Install(ctx, snack.Targets("tree", "less"), snack.WithAssumeYes())
+		_, err := mgr.Install(ctx, snack.Targets("tree", "less"), snack.WithAssumeYes())
 		require.NoError(t, err)
 
 		for _, pkg := range []string{"tree", "less"} {
@@ -137,7 +137,7 @@ func TestIntegration_Pacman(t *testing.T) {
 	})
 
 	t.Run("Remove", func(t *testing.T) {
-		err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, err := mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 		require.NoError(t, err)
 
 		installed, err := mgr.IsInstalled(ctx, "tree")
@@ -212,7 +212,7 @@ func TestIntegration_Pacman(t *testing.T) {
 		fo, ok := mgr.(snack.FileOwner)
 		require.True(t, ok)
 
-		_ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, _ = mgr.Install(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 
 		t.Run("FileList", func(t *testing.T) {
 			files, err := fo.FileList(ctx, "tree")
@@ -245,7 +245,7 @@ func TestIntegration_Pacman(t *testing.T) {
 			assert.Error(t, err)
 		})
 
-		_ = mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
+		_, _ = mgr.Remove(ctx, snack.Targets("tree"), snack.WithAssumeYes())
 	})
 
 	// --- Grouper ---
