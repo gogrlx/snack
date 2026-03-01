@@ -156,7 +156,7 @@ func TestIntegration_RPM(t *testing.T) {
 
 	// --- Operations rpm doesn't support ---
 	t.Run("Install_Unsupported", func(t *testing.T) {
-		_, err := mgr.Install(ctx, snack.Targets("tree"))
+		_, err := mgr.Install(ctx, snack.Targets("nonexistent-pkg-xyzzy"))
 		assert.Error(t, err)
 	})
 

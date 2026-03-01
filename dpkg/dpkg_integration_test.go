@@ -164,7 +164,7 @@ func TestIntegration_Dpkg(t *testing.T) {
 	t.Run("Install_Unsupported", func(t *testing.T) {
 		// dpkg install requires a .deb file path, not a package name
 		// This should fail gracefully
-		_, err := mgr.Install(ctx, snack.Targets("tree"))
+		_, err := mgr.Install(ctx, snack.Targets("nonexistent-pkg-xyzzy"))
 		assert.Error(t, err)
 	})
 
