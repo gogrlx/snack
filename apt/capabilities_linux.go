@@ -271,17 +271,23 @@ func listRepos(_ context.Context) ([]snack.Repository, error) {
 // extractURL pulls the URL from a deb/deb-src line.
 func extractURL(line string) string {
 	fields := strings.Fields(line)
+	inOptions := false
 	for i, f := range fields {
 		if i == 0 {
 			continue // skip deb/deb-src
 		}
-		if strings.HasPrefix(f, "[") {
-			// skip options block
-			for ; i < len(fields); i++ {
-				if strings.HasSuffix(fields[i], "]") {
-					break
-				}
+		if inOptions {
+			if strings.HasSuffix(f, "]") {
+				inOptions = false
 			}
+			continue
+		}
+		if strings.HasPrefix(f, "[") {
+			if strings.HasSuffix(f, "]") {
+				// Single-token options like [arch=amd64]
+				continue
+			}
+			inOptions = true
 			continue
 		}
 		return f
