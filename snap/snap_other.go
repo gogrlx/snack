@@ -66,6 +66,14 @@ func versionCmp(_ context.Context, _, _ string) (int, error) {
 	return 0, snack.ErrUnsupportedPlatform
 }
 
+func autoremove(_ context.Context, _ ...snack.Option) error {
+	return snack.ErrUnsupportedPlatform
+}
+
+func clean(_ context.Context) error {
+	return snack.ErrUnsupportedPlatform
+}
+
 func upgradePackages(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
 	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
 }
