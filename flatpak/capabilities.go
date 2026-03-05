@@ -8,8 +8,9 @@ import (
 
 // Compile-time interface checks.
 var (
-	_ snack.Cleaner     = (*Flatpak)(nil)
-	_ snack.RepoManager = (*Flatpak)(nil)
+	_ snack.Cleaner        = (*Flatpak)(nil)
+	_ snack.RepoManager    = (*Flatpak)(nil)
+	_ snack.VersionQuerier = (*Flatpak)(nil)
 )
 
 // Autoremove removes unused runtimes and extensions.
@@ -41,4 +42,26 @@ func (f *Flatpak) RemoveRepo(ctx context.Context, id string) error {
 	f.Lock()
 	defer f.Unlock()
 	return removeRepo(ctx, id)
+}
+
+// LatestVersion returns the latest available version of a flatpak from
+// configured remotes.
+func (f *Flatpak) LatestVersion(ctx context.Context, pkg string) (string, error) {
+	return latestVersion(ctx, pkg)
+}
+
+// ListUpgrades returns flatpaks that have newer versions available.
+func (f *Flatpak) ListUpgrades(ctx context.Context) ([]snack.Package, error) {
+	return listUpgrades(ctx)
+}
+
+// UpgradeAvailable reports whether a newer version is available.
+func (f *Flatpak) UpgradeAvailable(ctx context.Context, pkg string) (bool, error) {
+	return upgradeAvailable(ctx, pkg)
+}
+
+// VersionCmp compares two version strings using basic semver comparison.
+// Flatpak has no native version comparison tool.
+func (f *Flatpak) VersionCmp(ctx context.Context, ver1, ver2 string) (int, error) {
+	return versionCmp(ctx, ver1, ver2)
 }
