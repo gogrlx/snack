@@ -105,6 +105,55 @@ func parseInfoOutput(output string, pkg string) *snack.Package {
 	return p
 }
 
+// parseUpgradeOutput parses the output of `pkg_add -u -n`.
+// Lines like "name-oldver -> name-newver" indicate available upgrades.
+func parseUpgradeOutput(output string) []snack.Package {
+	var pkgs []snack.Package
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.Contains(line, "->") {
+			continue
+		}
+		parts := strings.Fields(line)
+		// Expect: "name-oldver -> name-newver"
+		if len(parts) < 3 || parts[1] != "->" {
+			continue
+		}
+		name, _ := splitNameVersion(parts[0])
+		_, newVer := splitNameVersion(parts[2])
+		if name != "" {
+			pkgs = append(pkgs, snack.Package{
+				Name:      name,
+				Version:   newVer,
+				Installed: true,
+			})
+		}
+	}
+	return pkgs
+}
+
+// parseFileListOutput parses `pkg_info -L <pkg>` output.
+// Lines starting with "/" after the header are file paths.
+func parseFileListOutput(output string) []string {
+	var files []string
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "/") {
+			files = append(files, line)
+		}
+	}
+	return files
+}
+
+// parseOwnerOutput parses `pkg_info -E <path>` output.
+// Returns the package name that owns the file.
+func parseOwnerOutput(output string) string {
+	output = strings.TrimSpace(output)
+	// pkg_info -E returns the package name-version
+	name, _ := splitNameVersion(output)
+	return name
+}
+
 // splitNameVersion splits "name-version" at the last hyphen.
 // OpenBSD packages use the last hyphen before a version number as separator.
 func splitNameVersion(s string) (string, string) {

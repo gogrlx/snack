@@ -176,8 +176,81 @@ func TestSplitNameVersionLeadingHyphen(t *testing.T) {
 	}
 }
 
+func TestParseUpgradeOutput(t *testing.T) {
+	input := `quirks-7.14 -> quirks-7.18
+curl-8.5.0 -> curl-8.6.0
+python-3.11.7p0 -> python-3.11.8p0
+`
+	pkgs := parseUpgradeOutput(input)
+	if len(pkgs) != 3 {
+		t.Fatalf("expected 3 packages, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "quirks" || pkgs[0].Version != "7.18" {
+		t.Errorf("unexpected first package: %+v", pkgs[0])
+	}
+	if pkgs[1].Name != "curl" || pkgs[1].Version != "8.6.0" {
+		t.Errorf("unexpected second package: %+v", pkgs[1])
+	}
+	if pkgs[2].Name != "python" || pkgs[2].Version != "3.11.8p0" {
+		t.Errorf("unexpected third package: %+v", pkgs[2])
+	}
+}
+
+func TestParseUpgradeOutputEmpty(t *testing.T) {
+	pkgs := parseUpgradeOutput("")
+	if len(pkgs) != 0 {
+		t.Fatalf("expected 0 packages, got %d", len(pkgs))
+	}
+}
+
+func TestParseFileListOutput(t *testing.T) {
+	input := `Information for curl-8.5.0:
+
+Files:
+/usr/local/bin/curl
+/usr/local/include/curl/curl.h
+/usr/local/lib/libcurl.so.26.0
+/usr/local/man/man1/curl.1
+`
+	files := parseFileListOutput(input)
+	if len(files) != 4 {
+		t.Fatalf("expected 4 files, got %d", len(files))
+	}
+	if files[0] != "/usr/local/bin/curl" {
+		t.Errorf("unexpected first file: %q", files[0])
+	}
+}
+
+func TestParseFileListOutputEmpty(t *testing.T) {
+	files := parseFileListOutput("")
+	if len(files) != 0 {
+		t.Fatalf("expected 0 files, got %d", len(files))
+	}
+}
+
+func TestParseOwnerOutput(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"curl-8.5.0", "curl"},
+		{"python-3.11.7p0", "python"},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := parseOwnerOutput(tt.input)
+		if got != tt.want {
+			t.Errorf("parseOwnerOutput(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
 func TestInterfaceCompliance(t *testing.T) {
 	var _ snack.Manager = (*Ports)(nil)
+	var _ snack.VersionQuerier = (*Ports)(nil)
+	var _ snack.Cleaner = (*Ports)(nil)
+	var _ snack.FileOwner = (*Ports)(nil)
+	var _ snack.PackageUpgrader = (*Ports)(nil)
 }
 
 func TestName(t *testing.T) {
