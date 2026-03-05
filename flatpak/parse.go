@@ -1,6 +1,7 @@
 package flatpak
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/gogrlx/snack"
@@ -126,4 +127,43 @@ func parseRemotes(output string) []snack.Repository {
 		repos = append(repos, repo)
 	}
 	return repos
+}
+
+// semverCmp does a basic semver-ish comparison.
+// Returns -1 if a < b, 0 if equal, 1 if a > b.
+func semverCmp(a, b string) int {
+	partsA := strings.Split(a, ".")
+	partsB := strings.Split(b, ".")
+
+	maxLen := len(partsA)
+	if len(partsB) > maxLen {
+		maxLen = len(partsB)
+	}
+
+	for i := 0; i < maxLen; i++ {
+		var numA, numB int
+		if i < len(partsA) {
+			numA, _ = strconv.Atoi(stripNonNumeric(partsA[i]))
+		}
+		if i < len(partsB) {
+			numB, _ = strconv.Atoi(stripNonNumeric(partsB[i]))
+		}
+		if numA < numB {
+			return -1
+		}
+		if numA > numB {
+			return 1
+		}
+	}
+	return 0
+}
+
+// stripNonNumeric keeps only leading digits from a string.
+func stripNonNumeric(s string) string {
+	for i, c := range s {
+		if c < '0' || c > '9' {
+			return s[:i]
+		}
+	}
+	return s
 }
