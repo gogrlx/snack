@@ -101,6 +101,81 @@ func TestSplitNameVersion(t *testing.T) {
 	}
 }
 
+func TestParseListEmpty(t *testing.T) {
+	pkgs := parseList("")
+	if len(pkgs) != 0 {
+		t.Fatalf("expected 0 packages, got %d", len(pkgs))
+	}
+}
+
+func TestParseListWhitespaceOnly(t *testing.T) {
+	pkgs := parseList("   \n  \n\n")
+	if len(pkgs) != 0 {
+		t.Fatalf("expected 0 packages, got %d", len(pkgs))
+	}
+}
+
+func TestParseListNoDescription(t *testing.T) {
+	input := "vim-9.0.2100\n"
+	pkgs := parseList(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "vim" || pkgs[0].Version != "9.0.2100" {
+		t.Errorf("unexpected package: %+v", pkgs[0])
+	}
+	if pkgs[0].Description != "" {
+		t.Errorf("expected empty description, got %q", pkgs[0].Description)
+	}
+}
+
+func TestParseSearchResultsEmpty(t *testing.T) {
+	pkgs := parseSearchResults("")
+	if len(pkgs) != 0 {
+		t.Fatalf("expected 0 packages, got %d", len(pkgs))
+	}
+}
+
+func TestParseInfoOutputEmpty(t *testing.T) {
+	pkg := parseInfoOutput("", "")
+	if pkg != nil {
+		t.Error("expected nil for empty input and empty pkg name")
+	}
+}
+
+func TestParseInfoOutputFallbackToPkgArg(t *testing.T) {
+	// No "Information for" header — should fall back to parsing the pkg argument.
+	input := "Some random output\nwithout the expected header"
+	pkg := parseInfoOutput(input, "curl-8.5.0")
+	if pkg == nil {
+		t.Fatal("expected non-nil package from fallback")
+	}
+	if pkg.Name != "curl" || pkg.Version != "8.5.0" {
+		t.Errorf("unexpected fallback parse: %+v", pkg)
+	}
+}
+
+func TestSplitNameVersionNoHyphen(t *testing.T) {
+	name, ver := splitNameVersion("singleword")
+	if name != "singleword" || ver != "" {
+		t.Errorf("splitNameVersion(\"singleword\") = (%q, %q), want (\"singleword\", \"\")", name, ver)
+	}
+}
+
+func TestSplitNameVersionLeadingHyphen(t *testing.T) {
+	// A hyphen at position 0 should return the whole string as name.
+	name, ver := splitNameVersion("-1.0")
+	if name != "" || ver != "1.0" {
+		// LastIndex("-1.0", "-") is 0, and idx <= 0 returns (s, "")
+		// Actually idx=0 means the condition idx <= 0 is true
+	}
+	// Re-check: idx=0, condition is idx <= 0, so returns (s, "")
+	name, ver = splitNameVersion("-1.0")
+	if name != "-1.0" || ver != "" {
+		t.Errorf("splitNameVersion(\"-1.0\") = (%q, %q), want (\"-1.0\", \"\")", name, ver)
+	}
+}
+
 func TestInterfaceCompliance(t *testing.T) {
 	var _ snack.Manager = (*Ports)(nil)
 }

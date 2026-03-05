@@ -2,12 +2,18 @@
 
 package detect
 
+import (
+	"github.com/gogrlx/snack"
+	"github.com/gogrlx/snack/ports"
+)
+
 // candidates returns manager factories in probe order for OpenBSD.
-// TODO: wire up ports.New() once the ports package is implemented.
 func candidates() []managerFactory {
-	return nil
+	return []managerFactory{
+		func() snack.Manager { return ports.New() },
+	}
 }
 
 func allManagers() []managerFactory {
-	return nil
+	return candidates()
 }
