@@ -6,6 +6,7 @@ import (
 	"github.com/gogrlx/snack"
 	"github.com/gogrlx/snack/apk"
 	"github.com/gogrlx/snack/apt"
+	"github.com/gogrlx/snack/aur"
 	"github.com/gogrlx/snack/dnf"
 	"github.com/gogrlx/snack/flatpak"
 	"github.com/gogrlx/snack/pacman"
@@ -26,6 +27,7 @@ func candidates() []managerFactory {
 }
 
 // allManagers returns all known manager factories (for ByName).
+// Includes supplemental managers like AUR that aren't primary candidates.
 func allManagers() []managerFactory {
-	return candidates()
+	return append(candidates(), func() snack.Manager { return aur.New() })
 }
