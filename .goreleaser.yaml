@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+builds:
+  - main: ./cmd/snack/
+    id: snack
+    binary: snack
+    goos:
+      - linux
+      - darwin
+      - freebsd
+      - openbsd
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    ldflags:
+      - -X main.version={{.Version}}
+
+universal_binaries:
+  - id: snack-universal
+    ids:
+      - snack
+    name_template: "snack-{{.Version}}-darwin-universal"
+    replace: true
+
+archives:
+  - formats: tar.gz
+    allow_different_binary_count: true
+    ids:
+      - snack
+      - snack-universal
+    name_template: "snack-{{.Version}}-{{.Os}}-{{.Arch}}"
+
+nfpms:
+  - id: snack
+    package_name: snack
+    builds: [snack]
+    formats: [apk, deb, rpm]
+    bindir: /usr/bin
+    description: "A unified CLI for system package managers"
+    maintainer: Tai Groot <tai@taigrr.com>
+    license: 0BSD
+    homepage: https://github.com/gogrlx/snack
+    vendor: Adatomic, Inc.
+
+release:
+  github:
+    owner: gogrlx
+    name: snack
+  ids:
+    - snack
+    - snack-universal
+  draft: true
+  prerelease: auto
+
+changelog:
+  use: github
+  sort: asc
+  abbrev: -1
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "^style:"
+  groups:
+    - title: "Breaking Changes"
+      regexp: "^.*!:+.*$"
+      order: 0
+    - title: "Features"
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 1
+    - title: "Bug Fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 2
+    - title: "Performance"
+      regexp: "^.*perf[(\\w)]*:+.*$"
+      order: 3
+    - title: "Refactor"
+      regexp: "^.*refactor[(\\w)]*:+.*$"
+      order: 4
+    - title: "Build"
+      regexp: "^.*build[(\\w)]*:+.*$"
+      order: 5
+    - title: Others
+      order: 999
