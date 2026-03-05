@@ -12,13 +12,15 @@ import (
 	"strconv"
 	"strings"
 
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/gogrlx/snack"
 )
 
 const aurGitBase = "https://aur.archlinux.org"
 
 func available() bool {
-	for _, tool := range []string{"git", "makepkg", "pacman"} {
+	for _, tool := range []string{"makepkg", "pacman"} {
 		if _, err := exec.LookPath(tool); err != nil {
 			return false
 		}
@@ -114,14 +116,6 @@ func (a *AUR) buildPackage(ctx context.Context, t snack.Target) (string, error) 
 		return "", err
 	}
 
-	// If a specific version is requested, check out the matching commit
-	if t.Version != "" {
-		// Try to find a commit tagged with this version
-		c := exec.CommandContext(ctx, "git", "log", "--all", "--oneline")
-		c.Dir = pkgDir
-		// Best-effort version checkout; if it fails, build latest
-	}
-
 	// Run makepkg
 	args := []string{"-s", "-f", "--noconfirm"}
 	args = append(args, a.MakepkgFlags...)
@@ -148,26 +142,30 @@ func cloneOrPull(ctx context.Context, pkg, dir string) error {
 
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
 		// Repo exists, pull latest
-		c := exec.CommandContext(ctx, "git", "pull", "--ff-only")
-		c.Dir = dir
-		var stderr bytes.Buffer
-		c.Stderr = &stderr
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("git pull %s: %s: %w", pkg, strings.TrimSpace(stderr.String()), err)
+		r, err := git.PlainOpen(dir)
+		if err != nil {
+			return fmt.Errorf("aur open %s: %w", pkg, err)
+		}
+		w, err := r.Worktree()
+		if err != nil {
+			return fmt.Errorf("aur worktree %s: %w", pkg, err)
+		}
+		if err := w.Pull(&git.PullOptions{}); err != nil && err != git.NoErrAlreadyUpToDate {
+			return fmt.Errorf("aur pull %s: %w", pkg, err)
 		}
 		return nil
 	}
 
-	// Clone fresh
-	c := exec.CommandContext(ctx, "git", "clone", "--depth=1", repoURL, dir)
-	var stderr bytes.Buffer
-	c.Stderr = &stderr
-	if err := c.Run(); err != nil {
-		errStr := strings.TrimSpace(stderr.String())
-		if strings.Contains(errStr, "not found") || strings.Contains(errStr, "does not appear to be a git repository") {
+	// Clone fresh (depth 1)
+	_, err := git.PlainCloneContext(ctx, dir, false, &git.CloneOptions{
+		URL:   repoURL,
+		Depth: 1,
+	})
+	if err != nil {
+		if err == transport.ErrRepositoryNotFound {
 			return fmt.Errorf("aur clone %s: %w", pkg, snack.ErrNotFound)
 		}
-		return fmt.Errorf("git clone %s: %s: %w", pkg, errStr, err)
+		return fmt.Errorf("aur clone %s: %w", pkg, err)
 	}
 	return nil
 }
