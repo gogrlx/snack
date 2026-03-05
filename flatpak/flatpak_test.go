@@ -37,6 +37,71 @@ func TestParseListEmpty(t *testing.T) {
 	}
 }
 
+func TestParseListEdgeCases(t *testing.T) {
+	t.Run("single entry", func(t *testing.T) {
+		pkgs := parseList("Firefox\torg.mozilla.Firefox\t131.0\tflathub\n")
+		if len(pkgs) != 1 {
+			t.Fatalf("expected 1 package, got %d", len(pkgs))
+		}
+		if pkgs[0].Name != "Firefox" {
+			t.Errorf("expected Firefox, got %q", pkgs[0].Name)
+		}
+	})
+
+	t.Run("two fields only", func(t *testing.T) {
+		pkgs := parseList("Firefox\torg.mozilla.Firefox\n")
+		if len(pkgs) != 1 {
+			t.Fatalf("expected 1 package, got %d", len(pkgs))
+		}
+		if pkgs[0].Name != "Firefox" {
+			t.Errorf("expected Firefox, got %q", pkgs[0].Name)
+		}
+		if pkgs[0].Version != "" {
+			t.Errorf("expected empty version, got %q", pkgs[0].Version)
+		}
+		if pkgs[0].Repository != "" {
+			t.Errorf("expected empty repository, got %q", pkgs[0].Repository)
+		}
+	})
+
+	t.Run("single field skipped", func(t *testing.T) {
+		pkgs := parseList("Firefox\n")
+		if len(pkgs) != 0 {
+			t.Errorf("expected 0 packages (needs >=2 fields), got %d", len(pkgs))
+		}
+	})
+
+	t.Run("extra fields", func(t *testing.T) {
+		pkgs := parseList("Firefox\torg.mozilla.Firefox\t131.0\tflathub\textra\n")
+		if len(pkgs) != 1 {
+			t.Fatalf("expected 1 package, got %d", len(pkgs))
+		}
+		if pkgs[0].Repository != "flathub" {
+			t.Errorf("expected flathub, got %q", pkgs[0].Repository)
+		}
+	})
+
+	t.Run("whitespace only lines", func(t *testing.T) {
+		pkgs := parseList("   \n\t\n  \n")
+		if len(pkgs) != 0 {
+			t.Errorf("expected 0 packages, got %d", len(pkgs))
+		}
+	})
+
+	t.Run("three fields no repo", func(t *testing.T) {
+		pkgs := parseList("GIMP\torg.gimp.GIMP\t2.10.38\n")
+		if len(pkgs) != 1 {
+			t.Fatalf("expected 1 package, got %d", len(pkgs))
+		}
+		if pkgs[0].Version != "2.10.38" {
+			t.Errorf("expected version 2.10.38, got %q", pkgs[0].Version)
+		}
+		if pkgs[0].Repository != "" {
+			t.Errorf("expected empty repository, got %q", pkgs[0].Repository)
+		}
+	})
+}
+
 func TestParseSearch(t *testing.T) {
 	input := "Firefox\torg.mozilla.Firefox\t131.0\tflathub\n" +
 		"Firefox ESR\torg.mozilla.FirefoxESR\t128.3\tflathub\n"
@@ -58,6 +123,32 @@ func TestParseSearchNoMatches(t *testing.T) {
 	if len(pkgs) != 0 {
 		t.Fatalf("expected 0 packages, got %d", len(pkgs))
 	}
+}
+
+func TestParseSearchEdgeCases(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		pkgs := parseSearch("")
+		if len(pkgs) != 0 {
+			t.Errorf("expected 0 packages, got %d", len(pkgs))
+		}
+	})
+
+	t.Run("single field line skipped", func(t *testing.T) {
+		pkgs := parseSearch("JustAName\n")
+		if len(pkgs) != 0 {
+			t.Errorf("expected 0 packages (needs >=2 fields), got %d", len(pkgs))
+		}
+	})
+
+	t.Run("not installed result", func(t *testing.T) {
+		pkgs := parseSearch("VLC\torg.videolan.VLC\t3.0.20\tflathub\n")
+		if len(pkgs) != 1 {
+			t.Fatalf("expected 1 package, got %d", len(pkgs))
+		}
+		if pkgs[0].Installed {
+			t.Error("search results should not be marked installed")
+		}
+	})
 }
 
 func TestParseInfo(t *testing.T) {
@@ -92,6 +183,46 @@ func TestParseInfoEmpty(t *testing.T) {
 	}
 }
 
+func TestParseInfoEdgeCases(t *testing.T) {
+	t.Run("name only", func(t *testing.T) {
+		pkg := parseInfo("Name: VLC\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Name != "VLC" {
+			t.Errorf("expected VLC, got %q", pkg.Name)
+		}
+	})
+
+	t.Run("no name returns nil", func(t *testing.T) {
+		pkg := parseInfo("Version: 1.0\nArch: x86_64\n")
+		if pkg != nil {
+			t.Error("expected nil when no Name field")
+		}
+	})
+
+	t.Run("no colon lines ignored", func(t *testing.T) {
+		pkg := parseInfo("Name: Test\nsome random line without colon\nVersion: 2.0\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Version != "2.0" {
+			t.Errorf("expected version 2.0, got %q", pkg.Version)
+		}
+	})
+
+	t.Run("value with colons", func(t *testing.T) {
+		pkg := parseInfo("Name: MyApp\nDescription: A tool: does things: well\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		// parseInfo uses strings.Index for first colon
+		if pkg.Description != "A tool: does things: well" {
+			t.Errorf("unexpected description: %q", pkg.Description)
+		}
+	})
+}
+
 func TestParseRemotes(t *testing.T) {
 	input := "flathub\thttps://dl.flathub.org/repo/\t\n" +
 		"gnome-nightly\thttps://nightly.gnome.org/repo/\tdisabled\n"
@@ -113,10 +244,162 @@ func TestParseRemotes(t *testing.T) {
 	}
 }
 
+func TestParseRemotesEdgeCases(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		repos := parseRemotes("")
+		if len(repos) != 0 {
+			t.Errorf("expected 0 repos, got %d", len(repos))
+		}
+	})
+
+	t.Run("single enabled remote", func(t *testing.T) {
+		repos := parseRemotes("flathub\thttps://dl.flathub.org/repo/\t\n")
+		if len(repos) != 1 {
+			t.Fatalf("expected 1 repo, got %d", len(repos))
+		}
+		if !repos[0].Enabled {
+			t.Error("expected enabled")
+		}
+		if repos[0].Name != "flathub" {
+			t.Errorf("expected Name=flathub, got %q", repos[0].Name)
+		}
+	})
+
+	t.Run("single disabled remote", func(t *testing.T) {
+		repos := parseRemotes("test-remote\thttps://example.com/\tdisabled\n")
+		if len(repos) != 1 {
+			t.Fatalf("expected 1 repo, got %d", len(repos))
+		}
+		if repos[0].Enabled {
+			t.Error("expected disabled")
+		}
+	})
+
+	t.Run("no URL field", func(t *testing.T) {
+		repos := parseRemotes("myremote\n")
+		if len(repos) != 1 {
+			t.Fatalf("expected 1 repo, got %d", len(repos))
+		}
+		if repos[0].ID != "myremote" {
+			t.Errorf("expected myremote, got %q", repos[0].ID)
+		}
+		if repos[0].URL != "" {
+			t.Errorf("expected empty URL, got %q", repos[0].URL)
+		}
+		if !repos[0].Enabled {
+			t.Error("expected enabled by default")
+		}
+	})
+
+	t.Run("whitespace lines ignored", func(t *testing.T) {
+		repos := parseRemotes("  \n\n  \n")
+		if len(repos) != 0 {
+			t.Errorf("expected 0 repos, got %d", len(repos))
+		}
+	})
+}
+
+func TestSemverCmp(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b string
+		want int
+	}{
+		{"equal", "1.0.0", "1.0.0", 0},
+		{"less major", "1.0.0", "2.0.0", -1},
+		{"greater major", "2.0.0", "1.0.0", 1},
+		{"less minor", "1.2.3", "1.3.0", -1},
+		{"less patch", "1.2.3", "1.2.4", -1},
+		{"multi-digit", "1.10.0", "1.9.0", 1},
+		{"short vs long equal", "1.0", "1.0.0", 0},
+		{"short vs long less", "1.0", "1.0.1", -1},
+		{"short vs long greater", "1.1", "1.0.9", 1},
+		{"single component", "5", "3", 1},
+		{"single equal", "3", "3", 0},
+		{"empty vs empty", "", "", 0},
+		{"empty vs version", "", "1.0", -1},
+		{"version vs empty", "1.0", "", 1},
+		{"non-numeric suffix", "1.0.0-beta", "1.0.0-rc1", 0},
+		{"pre-release stripped", "1.0.0beta2", "1.0.0rc1", 0},
+		{"four components", "1.2.3.4", "1.2.3.5", -1},
+		{"different lengths", "1.0.0.0", "1.0.0", 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := semverCmp(tt.a, tt.b)
+			if got != tt.want {
+				t.Errorf("semverCmp(%q, %q) = %d, want %d", tt.a, tt.b, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStripNonNumeric(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"123", "123"},
+		{"123abc", "123"},
+		{"abc", ""},
+		{"0beta", "0"},
+		{"", ""},
+		{"42-rc1", "42"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := stripNonNumeric(tt.input)
+			if got != tt.want {
+				t.Errorf("stripNonNumeric(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestInterfaceCompliance(t *testing.T) {
 	var _ snack.Manager = (*Flatpak)(nil)
 	var _ snack.Cleaner = (*Flatpak)(nil)
 	var _ snack.RepoManager = (*Flatpak)(nil)
+	var _ snack.VersionQuerier = (*Flatpak)(nil)
+	var _ snack.PackageUpgrader = (*Flatpak)(nil)
+}
+
+// Compile-time interface checks in test file
+var (
+	_ snack.VersionQuerier  = (*Flatpak)(nil)
+	_ snack.PackageUpgrader = (*Flatpak)(nil)
+)
+
+func TestCapabilities(t *testing.T) {
+	caps := snack.GetCapabilities(New())
+	if !caps.Clean {
+		t.Error("expected Clean=true")
+	}
+	if !caps.RepoManagement {
+		t.Error("expected RepoManagement=true")
+	}
+	if !caps.VersionQuery {
+		t.Error("expected VersionQuery=true")
+	}
+	// Should be false
+	if caps.FileOwnership {
+		t.Error("expected FileOwnership=false")
+	}
+	if caps.DryRun {
+		t.Error("expected DryRun=false")
+	}
+	if caps.Hold {
+		t.Error("expected Hold=false")
+	}
+	if caps.KeyManagement {
+		t.Error("expected KeyManagement=false")
+	}
+	if caps.Groups {
+		t.Error("expected Groups=false")
+	}
+	if caps.NameNormalize {
+		t.Error("expected NameNormalize=false")
+	}
 }
 
 func TestName(t *testing.T) {

@@ -79,36 +79,88 @@ func TestBuildArgs_RootBeforeBaseArgs(t *testing.T) {
 	assert.Greater(t, sIdx, rIdx, "root flag should come before base args")
 }
 
-func TestParseUpgrades_Empty(t *testing.T) {
-	assert.Empty(t, parseUpgrades(""))
-}
+func TestParseUpgrades(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantLen   int
+		wantNames []string
+		wantVers  []string
+	}{
+		{
+			name:    "empty",
+			input:   "",
+			wantLen: 0,
+		},
+		{
+			name:    "whitespace only",
+			input:   "   \n  \n\n\t\n",
+			wantLen: 0,
+		},
+		{
+			name:      "standard arrow format",
+			input:     "linux 6.7.3.arch1-1 -> 6.7.4.arch1-1\nvim 9.0.2-1 -> 9.1.0-1\n",
+			wantLen:   2,
+			wantNames: []string{"linux", "vim"},
+			wantVers:  []string{"6.7.4.arch1-1", "9.1.0-1"},
+		},
+		{
+			name:      "single package arrow format",
+			input:     "curl 8.6.0-1 -> 8.7.1-1\n",
+			wantLen:   1,
+			wantNames: []string{"curl"},
+			wantVers:  []string{"8.7.1-1"},
+		},
+		{
+			name:      "fallback two-field format",
+			input:     "pkg 2.0\n",
+			wantLen:   1,
+			wantNames: []string{"pkg"},
+			wantVers:  []string{"2.0"},
+		},
+		{
+			name:      "mixed arrow and fallback",
+			input:     "linux 6.7.3 -> 6.7.4\npkg 2.0\n",
+			wantLen:   2,
+			wantNames: []string{"linux", "pkg"},
+			wantVers:  []string{"6.7.4", "2.0"},
+		},
+		{
+			name:      "whitespace around entries",
+			input:     "\n  \nlinux 6.7.3 -> 6.7.4\n\n",
+			wantLen:   1,
+			wantNames: []string{"linux"},
+			wantVers:  []string{"6.7.4"},
+		},
+		{
+			name:    "single field line skipped",
+			input:   "orphan\nvalid 1.0 -> 2.0\n",
+			wantLen: 1,
+		},
+		{
+			name:      "epoch in version",
+			input:     "java-runtime 1:21.0.2-1 -> 1:21.0.3-1\n",
+			wantLen:   1,
+			wantNames: []string{"java-runtime"},
+			wantVers:  []string{"1:21.0.3-1"},
+		},
+	}
 
-func TestParseUpgrades_Standard(t *testing.T) {
-	input := `linux 6.7.3.arch1-1 -> 6.7.4.arch1-1
-vim 9.0.2-1 -> 9.1.0-1
-`
-	pkgs := parseUpgrades(input)
-	require.Len(t, pkgs, 2)
-	assert.Equal(t, "linux", pkgs[0].Name)
-	assert.Equal(t, "6.7.4.arch1-1", pkgs[0].Version)
-	assert.True(t, pkgs[0].Installed)
-	assert.Equal(t, "vim", pkgs[1].Name)
-	assert.Equal(t, "9.1.0-1", pkgs[1].Version)
-}
-
-func TestParseUpgrades_FallbackFormat(t *testing.T) {
-	// Some versions of pacman might output "pkg newver" without the arrow
-	input := "pkg 2.0\n"
-	pkgs := parseUpgrades(input)
-	require.Len(t, pkgs, 1)
-	assert.Equal(t, "pkg", pkgs[0].Name)
-	assert.Equal(t, "2.0", pkgs[0].Version)
-}
-
-func TestParseUpgrades_WhitespaceLines(t *testing.T) {
-	input := "\n  \nlinux 6.7.3 -> 6.7.4\n\n"
-	pkgs := parseUpgrades(input)
-	require.Len(t, pkgs, 1)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pkgs := parseUpgrades(tt.input)
+			require.Len(t, pkgs, tt.wantLen)
+			for i, p := range pkgs {
+				assert.True(t, p.Installed, "all upgrade entries should have Installed=true")
+				if i < len(tt.wantNames) {
+					assert.Equal(t, tt.wantNames[i], p.Name)
+				}
+				if i < len(tt.wantVers) {
+					assert.Equal(t, tt.wantVers[i], p.Version)
+				}
+			}
+		})
+	}
 }
 
 func TestParseGroupPkgSet_Empty(t *testing.T) {
@@ -147,6 +199,31 @@ group pkg2
 `
 	set := parseGroupPkgSet(input)
 	assert.Len(t, set, 2)
+}
+
+func TestParseGroupPkgSet_WhitespaceOnly(t *testing.T) {
+	set := parseGroupPkgSet("   \n  \n\t\n")
+	assert.Empty(t, set)
+}
+
+func TestParseGroupPkgSet_MultipleGroups(t *testing.T) {
+	// Different group names, same package names — set uses pkg name (second field)
+	input := `base-devel gcc
+xorg xorg-server
+base-devel gcc
+`
+	set := parseGroupPkgSet(input)
+	assert.Len(t, set, 2)
+	assert.Contains(t, set, "gcc")
+	assert.Contains(t, set, "xorg-server")
+}
+
+func TestParseGroupPkgSet_ExtraFields(t *testing.T) {
+	// Lines with more than 2 fields — should still use second field
+	input := "group pkg extra stuff\n"
+	set := parseGroupPkgSet(input)
+	assert.Len(t, set, 1)
+	assert.Contains(t, set, "pkg")
 }
 
 func TestNew(t *testing.T) {

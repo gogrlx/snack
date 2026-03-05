@@ -67,5 +67,49 @@ func TestNew(t *testing.T) {
 	}
 }
 
-// Verify Apt implements snack.Manager at compile time.
-var _ snack.Manager = (*Apt)(nil)
+func TestSupportsDryRun(t *testing.T) {
+	a := New()
+	if !a.SupportsDryRun() {
+		t.Error("expected SupportsDryRun() = true")
+	}
+}
+
+func TestCapabilities(t *testing.T) {
+	caps := snack.GetCapabilities(New())
+	checks := []struct {
+		name string
+		got  bool
+		want bool
+	}{
+		{"VersionQuery", caps.VersionQuery, true},
+		{"Hold", caps.Hold, true},
+		{"Clean", caps.Clean, true},
+		{"FileOwnership", caps.FileOwnership, true},
+		{"RepoManagement", caps.RepoManagement, true},
+		{"KeyManagement", caps.KeyManagement, true},
+		{"Groups", caps.Groups, false},
+		{"NameNormalize", caps.NameNormalize, true},
+		{"DryRun", caps.DryRun, true},
+	}
+	for _, c := range checks {
+		t.Run(c.name, func(t *testing.T) {
+			if c.got != c.want {
+				t.Errorf("Capabilities.%s = %v, want %v", c.name, c.got, c.want)
+			}
+		})
+	}
+}
+
+// Compile-time interface checks.
+var (
+	_ snack.Manager         = (*Apt)(nil)
+	_ snack.VersionQuerier  = (*Apt)(nil)
+	_ snack.Holder          = (*Apt)(nil)
+	_ snack.Cleaner         = (*Apt)(nil)
+	_ snack.FileOwner       = (*Apt)(nil)
+	_ snack.RepoManager     = (*Apt)(nil)
+	_ snack.KeyManager      = (*Apt)(nil)
+	_ snack.NameNormalizer  = (*Apt)(nil)
+	_ snack.DryRunner       = (*Apt)(nil)
+	_ snack.PackageUpgrader = (*Apt)(nil)
+)

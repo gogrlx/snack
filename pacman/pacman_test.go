@@ -130,6 +130,58 @@ func TestBuildArgs(t *testing.T) {
 
 func TestInterfaceCompliance(t *testing.T) {
 	var _ snack.Manager = (*Pacman)(nil)
+	var _ snack.VersionQuerier = (*Pacman)(nil)
+	var _ snack.Cleaner = (*Pacman)(nil)
+	var _ snack.FileOwner = (*Pacman)(nil)
+	var _ snack.Grouper = (*Pacman)(nil)
+	var _ snack.DryRunner = (*Pacman)(nil)
+	var _ snack.PackageUpgrader = (*Pacman)(nil)
+}
+
+func TestInterfaceNonCompliance(t *testing.T) {
+	p := New()
+	var m snack.Manager = p
+
+	if _, ok := m.(snack.Holder); ok {
+		t.Error("Pacman should not implement Holder")
+	}
+	if _, ok := m.(snack.RepoManager); ok {
+		t.Error("Pacman should not implement RepoManager")
+	}
+	if _, ok := m.(snack.KeyManager); ok {
+		t.Error("Pacman should not implement KeyManager")
+	}
+	if _, ok := m.(snack.NameNormalizer); ok {
+		t.Error("Pacman should not implement NameNormalizer")
+	}
+}
+
+func TestCapabilities(t *testing.T) {
+	caps := snack.GetCapabilities(New())
+
+	tests := []struct {
+		name string
+		got  bool
+		want bool
+	}{
+		{"VersionQuery", caps.VersionQuery, true},
+		{"Clean", caps.Clean, true},
+		{"FileOwnership", caps.FileOwnership, true},
+		{"Groups", caps.Groups, true},
+		{"DryRun", caps.DryRun, true},
+		{"Hold", caps.Hold, false},
+		{"RepoManagement", caps.RepoManagement, false},
+		{"KeyManagement", caps.KeyManagement, false},
+		{"NameNormalize", caps.NameNormalize, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.want)
+			}
+		})
+	}
 }
 
 func TestName(t *testing.T) {

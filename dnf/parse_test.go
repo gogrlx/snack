@@ -3,8 +3,6 @@ package dnf
 import (
 	"strings"
 	"testing"
-
-	"github.com/gogrlx/snack"
 )
 
 func TestParseList(t *testing.T) {
@@ -458,15 +456,399 @@ updates-testing                 Fedora 43 - x86_64 - Test Updates               
 	}
 }
 
-// Ensure interface checks from capabilities.go are satisfied.
-var (
-	_ snack.Manager        = (*DNF)(nil)
-	_ snack.VersionQuerier = (*DNF)(nil)
-	_ snack.Holder         = (*DNF)(nil)
-	_ snack.Cleaner        = (*DNF)(nil)
-	_ snack.FileOwner      = (*DNF)(nil)
-	_ snack.RepoManager    = (*DNF)(nil)
-	_ snack.KeyManager     = (*DNF)(nil)
-	_ snack.Grouper        = (*DNF)(nil)
-	_ snack.NameNormalizer = (*DNF)(nil)
-)
+// --- Edge case tests ---
+
+func TestParseListEmpty(t *testing.T) {
+	pkgs := parseList("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseListSinglePackage(t *testing.T) {
+	input := `Installed Packages
+curl.x86_64                     7.76.1-23.el9                  @baseos
+`
+	pkgs := parseList(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "curl" {
+		t.Errorf("Name = %q, want curl", pkgs[0].Name)
+	}
+}
+
+func TestParseListMalformedLines(t *testing.T) {
+	input := `Installed Packages
+curl.x86_64                     7.76.1-23.el9                  @baseos
+thislinehasnospaces
+   only-one-field
+bash.x86_64                     5.1.8-6.el9                    @anaconda
+`
+	pkgs := parseList(input)
+	if len(pkgs) != 2 {
+		t.Fatalf("expected 2 packages (skip malformed), got %d", len(pkgs))
+	}
+}
+
+func TestParseListNoHeader(t *testing.T) {
+	// Lines that look like packages without the "Installed Packages" header
+	input := `curl.x86_64                     7.76.1-23.el9                  @baseos
+bash.x86_64                     5.1.8-6.el9                    @anaconda
+`
+	pkgs := parseList(input)
+	if len(pkgs) != 2 {
+		t.Fatalf("expected 2 packages, got %d", len(pkgs))
+	}
+}
+
+func TestParseListTwoColumns(t *testing.T) {
+	// Only name.arch and version, no repo column
+	input := `Installed Packages
+curl.x86_64                     7.76.1-23.el9
+`
+	pkgs := parseList(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Repository != "" {
+		t.Errorf("Repository = %q, want empty", pkgs[0].Repository)
+	}
+}
+
+func TestParseSearchEmpty(t *testing.T) {
+	pkgs := parseSearch("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseSearchSingleResult(t *testing.T) {
+	input := `=== Name Exactly Matched: curl ===
+curl.x86_64 : A utility for getting files from remote servers
+`
+	pkgs := parseSearch(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "curl" {
+		t.Errorf("Name = %q, want curl", pkgs[0].Name)
+	}
+}
+
+func TestParseSearchMalformedLines(t *testing.T) {
+	input := `=== Name Matched ===
+curl.x86_64 : A utility
+no-separator-here
+another.line.without : proper : colons
+bash.noarch : Shell
+`
+	pkgs := parseSearch(input)
+	// "curl.x86_64 : A utility" and "another.line.without : proper : colons" and "bash.noarch : Shell"
+	if len(pkgs) != 3 {
+		t.Fatalf("expected 3 packages, got %d", len(pkgs))
+	}
+}
+
+func TestParseInfoEmpty(t *testing.T) {
+	p := parseInfo("")
+	if p != nil {
+		t.Errorf("expected nil from empty input, got %+v", p)
+	}
+}
+
+func TestParseInfoNoName(t *testing.T) {
+	input := `Version      : 1.0
+Architecture : x86_64
+`
+	p := parseInfo(input)
+	if p != nil {
+		t.Errorf("expected nil when no Name field, got %+v", p)
+	}
+}
+
+func TestParseInfoReleaseBeforeVersion(t *testing.T) {
+	// Release without prior Version should not panic
+	input := `Name    : test
+Release : 1.el9
+Version : 2.0
+`
+	p := parseInfo(input)
+	if p == nil {
+		t.Fatal("expected non-nil package")
+	}
+	// Release came before Version was set, so it won't append properly,
+	// but Version should at least be set
+	if p.Name != "test" {
+		t.Errorf("Name = %q, want test", p.Name)
+	}
+}
+
+func TestParseInfoFromRepo(t *testing.T) {
+	input := `Name         : bash
+Version      : 5.1.8
+Release      : 6.el9
+From repo    : baseos
+Summary      : The GNU Bourne Again shell
+`
+	p := parseInfo(input)
+	if p == nil {
+		t.Fatal("expected non-nil package")
+	}
+	if p.Repository != "baseos" {
+		t.Errorf("Repository = %q, want baseos", p.Repository)
+	}
+}
+
+func TestParseVersionLockEmpty(t *testing.T) {
+	pkgs := parseVersionLock("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseVersionLockSingleEntry(t *testing.T) {
+	input := `nginx-0:1.20.1-14.el9_2.1.*
+`
+	pkgs := parseVersionLock(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "nginx" {
+		t.Errorf("Name = %q, want nginx", pkgs[0].Name)
+	}
+}
+
+func TestParseRepoListEmpty(t *testing.T) {
+	repos := parseRepoList("")
+	if len(repos) != 0 {
+		t.Errorf("expected 0 repos from empty input, got %d", len(repos))
+	}
+}
+
+func TestParseRepoListSingleRepo(t *testing.T) {
+	input := `repo id                              repo name                                        status
+baseos                               CentOS Stream 9 - BaseOS                         enabled
+`
+	repos := parseRepoList(input)
+	if len(repos) != 1 {
+		t.Fatalf("expected 1 repo, got %d", len(repos))
+	}
+	if repos[0].ID != "baseos" || !repos[0].Enabled {
+		t.Errorf("unexpected repo: %+v", repos[0])
+	}
+}
+
+func TestParseGroupListEmpty(t *testing.T) {
+	groups := parseGroupList("")
+	if len(groups) != 0 {
+		t.Errorf("expected 0 groups from empty input, got %d", len(groups))
+	}
+}
+
+func TestParseGroupInfoEmpty(t *testing.T) {
+	pkgs := parseGroupInfo("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseGroupInfoWithMarks(t *testing.T) {
+	input := `Group: Web Server
+ Mandatory Packages:
+   = httpd
+   + mod_ssl
+   - php
+`
+	pkgs := parseGroupInfo(input)
+	if len(pkgs) != 3 {
+		t.Fatalf("expected 3 packages, got %d", len(pkgs))
+	}
+	names := map[string]bool{}
+	for _, p := range pkgs {
+		names[p.Name] = true
+	}
+	for _, want := range []string{"httpd", "mod_ssl", "php"} {
+		if !names[want] {
+			t.Errorf("missing package %q", want)
+		}
+	}
+}
+
+func TestParseGroupIsInstalledEmpty(t *testing.T) {
+	if parseGroupIsInstalled("", "anything") {
+		t.Error("expected false for empty input")
+	}
+}
+
+func TestNormalizeNameEdgeCases(t *testing.T) {
+	tests := []struct {
+		input, want string
+	}{
+		{"", ""},
+		{"pkg.unknown.ext", "pkg.unknown.ext"},
+		{"name.with.dots.x86_64", "name.with.dots"},
+		{"python3.11", "python3.11"},
+		{"glibc.s390x", "glibc"},
+		{"kernel.src", "kernel"},
+		{".x86_64", ""},
+		{"pkg.ppc64le", "pkg"},
+		{"pkg.armv7hl", "pkg"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := normalizeName(tt.input)
+			if got != tt.want {
+				t.Errorf("normalizeName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseArchEdgeCases(t *testing.T) {
+	tests := []struct {
+		input, wantName, wantArch string
+	}{
+		{"", "", ""},
+		{"pkg.i386", "pkg", "i386"},
+		{"pkg.ppc64le", "pkg", "ppc64le"},
+		{"pkg.s390x", "pkg", "s390x"},
+		{"pkg.armv7hl", "pkg", "armv7hl"},
+		{"pkg.src", "pkg", "src"},
+		{"pkg.unknown", "pkg.unknown", ""},
+		{"name.with.many.dots.noarch", "name.with.many.dots", "noarch"},
+		{".noarch", "", "noarch"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			name, arch := parseArch(tt.input)
+			if name != tt.wantName || arch != tt.wantArch {
+				t.Errorf("parseArch(%q) = (%q, %q), want (%q, %q)",
+					tt.input, name, arch, tt.wantName, tt.wantArch)
+			}
+		})
+	}
+}
+
+// --- dnf5 edge case tests ---
+
+func TestStripPreambleEmpty(t *testing.T) {
+	got := stripPreamble("")
+	if got != "" {
+		t.Errorf("expected empty, got %q", got)
+	}
+}
+
+func TestStripPreambleNoPreamble(t *testing.T) {
+	input := "Installed packages\nbash.x86_64   5.3.0-2.fc43   abc\n"
+	got := stripPreamble(input)
+	if got != input {
+		t.Errorf("expected unchanged output when no preamble present")
+	}
+}
+
+func TestParseListDNF5Empty(t *testing.T) {
+	pkgs := parseListDNF5("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseListDNF5SinglePackage(t *testing.T) {
+	input := `Installed packages
+curl.aarch64   7.76.1-23.el9   abc123
+`
+	pkgs := parseListDNF5(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "curl" || pkgs[0].Arch != "aarch64" {
+		t.Errorf("unexpected: %+v", pkgs[0])
+	}
+}
+
+func TestParseSearchDNF5Empty(t *testing.T) {
+	pkgs := parseSearchDNF5("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseInfoDNF5Empty(t *testing.T) {
+	p := parseInfoDNF5("")
+	if p != nil {
+		t.Errorf("expected nil from empty input, got %+v", p)
+	}
+}
+
+func TestParseInfoDNF5NoName(t *testing.T) {
+	input := `Version : 1.0
+Architecture : x86_64
+`
+	p := parseInfoDNF5(input)
+	if p != nil {
+		t.Errorf("expected nil when no Name field, got %+v", p)
+	}
+}
+
+func TestParseGroupListDNF5Empty(t *testing.T) {
+	groups := parseGroupListDNF5("")
+	if len(groups) != 0 {
+		t.Errorf("expected 0 groups from empty input, got %d", len(groups))
+	}
+}
+
+func TestParseGroupIsInstalledDNF5Empty(t *testing.T) {
+	if parseGroupIsInstalledDNF5("", "anything") {
+		t.Error("expected false for empty input")
+	}
+}
+
+func TestParseVersionLockDNF5Empty(t *testing.T) {
+	pkgs := parseVersionLockDNF5("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseVersionLockDNF5SingleEntry(t *testing.T) {
+	input := `# Added by 'versionlock add' command on 2026-02-26 03:14:29
+Package name: nginx
+evr = 1.20.1-14.el9
+`
+	pkgs := parseVersionLockDNF5(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "nginx" {
+		t.Errorf("Name = %q, want nginx", pkgs[0].Name)
+	}
+}
+
+func TestParseRepoListDNF5Empty(t *testing.T) {
+	repos := parseRepoListDNF5("")
+	if len(repos) != 0 {
+		t.Errorf("expected 0 repos from empty input, got %d", len(repos))
+	}
+}
+
+func TestParseGroupInfoDNF5Empty(t *testing.T) {
+	pkgs := parseGroupInfoDNF5("")
+	if len(pkgs) != 0 {
+		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
+	}
+}
+
+func TestParseGroupInfoDNF5SinglePackage(t *testing.T) {
+	input := `Id                   : test-group
+Name                 : Test
+Mandatory packages   : single-pkg
+`
+	pkgs := parseGroupInfoDNF5(input)
+	if len(pkgs) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "single-pkg" {
+		t.Errorf("Name = %q, want single-pkg", pkgs[0].Name)
+	}
+}
