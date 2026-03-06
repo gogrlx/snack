@@ -78,40 +78,6 @@ func versionCmp(_ context.Context, ver1, ver2 string) (int, error) {
 	}
 }
 
-func autoremove(ctx context.Context, opts ...snack.Option) error {
-	o := snack.ApplyOptions(opts...)
-	_, err := runCmd(ctx, "pkg_delete", []string{"-a"}, o)
-	return err
-}
-
-func clean(_ context.Context) error {
-	// OpenBSD does not maintain a package cache like FreeBSD/apt.
-	// Downloaded packages are removed after installation by default.
-	return nil
-}
-
-func fileList(ctx context.Context, pkg string) ([]string, error) {
-	out, err := runCmd(ctx, "pkg_info", []string{"-L", pkg}, snack.Options{})
-	if err != nil {
-		if strings.Contains(err.Error(), "exit status 1") {
-			return nil, fmt.Errorf("ports fileList %s: %w", pkg, snack.ErrNotInstalled)
-		}
-		return nil, fmt.Errorf("ports fileList: %w", err)
-	}
-	return parseFileListOutput(out), nil
-}
-
-func owner(ctx context.Context, path string) (string, error) {
-	out, err := runCmd(ctx, "pkg_info", []string{"-E", path}, snack.Options{})
-	if err != nil {
-		if strings.Contains(err.Error(), "exit status 1") {
-			return "", fmt.Errorf("ports owner %s: %w", path, snack.ErrNotFound)
-		}
-		return "", fmt.Errorf("ports owner: %w", err)
-	}
-	return parseOwnerOutput(out), nil
-}
-
 func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Option) (snack.InstallResult, error) {
 	o := snack.ApplyOptions(opts...)
 	var toUpgrade []snack.Target
