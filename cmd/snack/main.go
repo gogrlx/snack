@@ -387,6 +387,9 @@ func detectCmd() *cobra.Command {
 				if caps.NameNormalize {
 					capList = append(capList, "normalize")
 				}
+				if caps.PackageUpgrade {
+					capList = append(capList, "pkg-upgrade")
+				}
 				capStr := ""
 				if len(capList) > 0 {
 					capStr = " [" + strings.Join(capList, ", ") + "]"

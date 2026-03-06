@@ -44,6 +44,7 @@ func TestGetCapabilities(t *testing.T) {
 		"KeyManagement":  caps.KeyManagement,
 		"Groups":         caps.Groups,
 		"DryRun":         caps.DryRun,
+		"PackageUpgrade": caps.PackageUpgrade,
 	}
 	for name, got := range wantFalse {
 		t.Run(name+"_false", func(t *testing.T) {

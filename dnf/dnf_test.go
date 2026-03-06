@@ -52,6 +52,7 @@ func TestGetCapabilities(t *testing.T) {
 		{"Groups", caps.Groups},
 		{"NameNormalize", caps.NameNormalize},
 		{"DryRun", caps.DryRun},
+		{"PackageUpgrade", caps.PackageUpgrade},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

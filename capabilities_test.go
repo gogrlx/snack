@@ -77,6 +77,7 @@ func TestGetCapabilities_BaseManager(t *testing.T) {
 	assert.False(t, caps.Groups)
 	assert.False(t, caps.NameNormalize)
 	assert.False(t, caps.DryRun)
+	assert.False(t, caps.PackageUpgrade)
 }
 
 func TestGetCapabilities_FullManager(t *testing.T) {
@@ -90,4 +91,5 @@ func TestGetCapabilities_FullManager(t *testing.T) {
 	assert.True(t, caps.Groups)
 	assert.True(t, caps.NameNormalize)
 	assert.True(t, caps.DryRun)
+	assert.True(t, caps.PackageUpgrade)
 }

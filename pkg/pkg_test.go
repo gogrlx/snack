@@ -665,4 +665,7 @@ func TestCapabilities(t *testing.T) {
 	if caps.DryRun {
 		t.Error("expected DryRun=false")
 	}
+	if !caps.PackageUpgrade {
+		t.Error("expected PackageUpgrade=true")
+	}
 }

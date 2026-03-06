@@ -405,6 +405,9 @@ func TestCapabilities(t *testing.T) {
 	if caps.NameNormalize {
 		t.Error("expected NameNormalize=false")
 	}
+	if !caps.PackageUpgrade {
+		t.Error("expected PackageUpgrade=true")
+	}
 }
 
 func TestSupportsDryRun(t *testing.T) {

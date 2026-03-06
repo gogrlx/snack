@@ -173,6 +173,7 @@ func TestCapabilities(t *testing.T) {
 		{"RepoManagement", caps.RepoManagement, false},
 		{"KeyManagement", caps.KeyManagement, false},
 		{"NameNormalize", caps.NameNormalize, false},
+		{"PackageUpgrade", caps.PackageUpgrade, true},
 	}
 
 	for _, tt := range tests {

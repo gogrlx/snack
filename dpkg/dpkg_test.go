@@ -117,6 +117,7 @@ func TestCapabilities(t *testing.T) {
 		{"RepoManagement", caps.RepoManagement, false},
 		{"KeyManagement", caps.KeyManagement, false},
 		{"Groups", caps.Groups, false},
+		{"PackageUpgrade", caps.PackageUpgrade, false},
 	}
 	for _, c := range checks {
 		t.Run(c.name, func(t *testing.T) {
