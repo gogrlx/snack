@@ -2,13 +2,19 @@
 
 package detect
 
+import (
+	"github.com/gogrlx/snack"
+	"github.com/gogrlx/snack/winget"
+)
+
 // candidates returns manager factories in probe order for Windows.
-// Currently no Windows package managers are supported.
 func candidates() []managerFactory {
-	return nil
+	return []managerFactory{
+		func() snack.Manager { return winget.New() },
+	}
 }
 
 // allManagers returns all known manager factories (for ByName).
 func allManagers() []managerFactory {
-	return nil
+	return candidates()
 }
