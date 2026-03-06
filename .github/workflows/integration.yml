@@ -211,6 +211,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Unit tests
+        shell: bash
         run: go test -race -coverprofile=coverage-windows.out ./winget/ ./detect/
       - uses: actions/upload-artifact@v4
         if: always()

@@ -29,7 +29,7 @@ func TestIntegration_Apk(t *testing.T) {
 	assert.False(t, caps.RepoManagement, "apk should not support RepoManagement")
 	assert.False(t, caps.KeyManagement, "apk should not support KeyManagement")
 	assert.False(t, caps.Groups, "apk should not support Groups")
-	assert.False(t, caps.NameNormalize, "apk should not support NameNormalize")
+	assert.True(t, caps.NameNormalize, "apk should support NameNormalize")
 
 	t.Run("Update", func(t *testing.T) {
 		require.NoError(t, mgr.Update(ctx))
