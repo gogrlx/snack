@@ -188,10 +188,40 @@ jobs:
           name: coverage-flatpak
           path: coverage-flatpak.out
 
+  cross-compile:
+    name: Cross Compile
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [windows, darwin, freebsd, openbsd]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build for ${{ matrix.goos }}
+        run: GOOS=${{ matrix.goos }} go build ./...
+
+  windows:
+    name: Windows (winget)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Unit tests
+        run: go test -race -coverprofile=coverage-windows.out ./winget/ ./detect/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-windows
+          path: coverage-windows.out
+
   codecov:
     name: Upload Coverage
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests, debian, ubuntu, fedora-dnf4, fedora-dnf5, alpine, arch, flatpak]
+    needs: [lint, unit-tests, debian, ubuntu, fedora-dnf4, fedora-dnf5, alpine, arch, flatpak, windows, cross-compile]
     if: always()
     steps:
       - uses: actions/checkout@v4
@@ -203,7 +233,7 @@ jobs:
         run: ls -la coverage-*.out 2>/dev/null || echo "No coverage files found"
       - uses: codecov/codecov-action@v5
         with:
-          files: coverage-unit.out,coverage-debian.out,coverage-ubuntu-apt.out,coverage-ubuntu-snap.out,coverage-fedora39.out,coverage-fedora-latest.out,coverage-alpine.out,coverage-arch.out,coverage-flatpak.out
+          files: coverage-unit.out,coverage-debian.out,coverage-ubuntu-apt.out,coverage-ubuntu-snap.out,coverage-fedora39.out,coverage-fedora-latest.out,coverage-alpine.out,coverage-arch.out,coverage-flatpak.out,coverage-windows.out
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
