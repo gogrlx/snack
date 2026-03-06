@@ -24,7 +24,7 @@ func TestIntegration_Snap(t *testing.T) {
 	caps := snack.GetCapabilities(mgr)
 	assert.True(t, caps.VersionQuery, "snap should support VersionQuery")
 	assert.False(t, caps.Hold)
-	assert.False(t, caps.Clean)
+	assert.True(t, caps.Clean, "snap should support Clean")
 	assert.False(t, caps.FileOwnership)
 	assert.False(t, caps.RepoManagement)
 	assert.False(t, caps.KeyManagement)
