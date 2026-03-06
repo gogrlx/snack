@@ -312,6 +312,18 @@ func TestParseInfoNameVersion(t *testing.T) {
 			wantN: "lib-ssl-dev",
 			wantV: "3.0.0-r0",
 		},
+		{
+			name:  "empty",
+			input: "",
+			wantN: "",
+			wantV: "",
+		},
+		{
+			name:  "whitespace_only",
+			input: "   ",
+			wantN: "",
+			wantV: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

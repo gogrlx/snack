@@ -127,10 +127,12 @@ func parseInfo(output string) *snack.Package {
 // The first line is typically "pkgname-version description".
 func parseInfoNameVersion(output string) (string, string) {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
-	if len(lines) == 0 {
+	if len(lines) == 0 || lines[0] == "" {
 		return "", ""
 	}
-	// first line: name-version
-	first := strings.Fields(lines[0])[0]
-	return splitNameVersion(first)
+	fields := strings.Fields(lines[0])
+	if len(fields) == 0 {
+		return "", ""
+	}
+	return splitNameVersion(fields[0])
 }
