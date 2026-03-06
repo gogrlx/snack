@@ -25,6 +25,7 @@ Part of the [grlx](https://github.com/gogrlx/grlx) ecosystem.
 | `brew` | Homebrew | macOS/Linux | ✅ |
 | `pkg` | pkg(8) | FreeBSD | ✅ |
 | `ports` | ports/packages | OpenBSD | ✅ |
+| `winget` | Windows Package Manager | Windows | ✅ |
 | `detect` | Auto-detection | All | ✅ |
 
 ### Capability Matrix
@@ -41,6 +42,7 @@ Part of the [grlx](https://github.com/gogrlx/grlx) ecosystem.
 | brew     | ✅ | - | ✅ | ✅ | - | - | - | ✅ | - | ✅ |
 | pkg      | ✅ | ✅ | ✅ | ✅ | ✅ | - | - | ✅ | ✅ | ✅ |
 | ports    | ✅ | - | ✅ | ✅ | - | - | - | ✅ | - | ✅ |
+| winget   | ✅ | - | - | - | ✅ | - | - | ✅ | - | ✅ |
 
 ## Install
 
@@ -139,6 +141,7 @@ if caps.Hold {
 4. dnf + rpm (Fedora/RHEL)
 5. flatpak + snap (cross-distro)
 6. pkg + ports (BSD)
+7. winget (Windows)
 
 ## CLI
 
