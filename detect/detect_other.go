@@ -1,4 +1,4 @@
-//go:build !linux && !freebsd && !openbsd && !darwin
+//go:build !linux && !freebsd && !openbsd && !darwin && !windows
 
 package detect
 
