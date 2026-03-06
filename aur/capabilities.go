@@ -34,8 +34,8 @@ func (a *AUR) Autoremove(ctx context.Context, opts ...snack.Option) error {
 }
 
 // Clean is a no-op for AUR (builds use temp directories).
-func (a *AUR) Clean(_ context.Context) error {
-	return nil
+func (a *AUR) Clean(ctx context.Context) error {
+	return clean(ctx)
 }
 
 // UpgradePackages rebuilds and reinstalls specific AUR packages.

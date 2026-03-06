@@ -24,12 +24,12 @@ func TestIntegration_Flatpak(t *testing.T) {
 	caps := snack.GetCapabilities(mgr)
 	assert.True(t, caps.Clean, "flatpak should support Clean")
 	assert.True(t, caps.RepoManagement, "flatpak should support RepoManagement")
-	assert.False(t, caps.VersionQuery)
+	assert.True(t, caps.VersionQuery, "flatpak should support VersionQuery")
 	assert.False(t, caps.Hold)
 	assert.False(t, caps.FileOwnership)
 	assert.False(t, caps.KeyManagement)
 	assert.False(t, caps.Groups)
-	assert.False(t, caps.NameNormalize)
+	assert.True(t, caps.NameNormalize, "flatpak should support NameNormalize")
 
 	t.Run("Update", func(t *testing.T) {
 		require.NoError(t, mgr.Update(ctx))

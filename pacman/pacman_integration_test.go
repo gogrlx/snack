@@ -29,7 +29,7 @@ func TestIntegration_Pacman(t *testing.T) {
 	assert.False(t, caps.Hold, "pacman should not support Hold")
 	assert.False(t, caps.RepoManagement, "pacman should not support RepoManagement")
 	assert.False(t, caps.KeyManagement, "pacman should not support KeyManagement")
-	assert.False(t, caps.NameNormalize, "pacman should not support NameNormalize")
+	assert.True(t, caps.NameNormalize, "pacman should support NameNormalize")
 
 	t.Run("Update", func(t *testing.T) {
 		require.NoError(t, mgr.Update(ctx))

@@ -29,7 +29,7 @@ func TestIntegration_Snap(t *testing.T) {
 	assert.False(t, caps.RepoManagement)
 	assert.False(t, caps.KeyManagement)
 	assert.False(t, caps.Groups)
-	assert.False(t, caps.NameNormalize)
+	assert.True(t, caps.NameNormalize, "snap should support NameNormalize")
 
 	t.Run("Update", func(t *testing.T) {
 		require.NoError(t, mgr.Update(ctx))

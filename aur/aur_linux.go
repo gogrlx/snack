@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/gogrlx/snack"
@@ -380,14 +379,4 @@ func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Opt
 	return install(ctx, pkgs, allOpts...)
 }
 
-// getAURBuildDir returns the directory to use for AUR builds.
-func getAURBuildDir() string {
-	if dir := os.Getenv("AURDEST"); dir != "" {
-		return dir
-	}
-	if cache := os.Getenv("XDG_CACHE_HOME"); cache != "" {
-		return filepath.Join(cache, "aur")
-	}
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".cache", "aur")
-}
+
