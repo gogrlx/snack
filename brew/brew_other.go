@@ -1,6 +1,6 @@
-//go:build !linux
+//go:build !darwin && !linux
 
-package aur
+package brew
 
 import (
 	"context"
@@ -72,6 +72,14 @@ func autoremove(_ context.Context, _ ...snack.Option) error {
 
 func clean(_ context.Context) error {
 	return snack.ErrUnsupportedPlatform
+}
+
+func fileList(_ context.Context, _ string) ([]string, error) {
+	return nil, snack.ErrUnsupportedPlatform
+}
+
+func owner(_ context.Context, _ string) (string, error) {
+	return "", snack.ErrUnsupportedPlatform
 }
 
 func upgradePackages(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {

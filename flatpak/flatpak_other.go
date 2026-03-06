@@ -62,6 +62,22 @@ func removeRepo(_ context.Context, _ string) error {
 	return snack.ErrUnsupportedPlatform
 }
 
+func latestVersion(_ context.Context, _ string) (string, error) {
+	return "", snack.ErrUnsupportedPlatform
+}
+
+func listUpgrades(_ context.Context) ([]snack.Package, error) {
+	return nil, snack.ErrUnsupportedPlatform
+}
+
+func upgradeAvailable(_ context.Context, _ string) (bool, error) {
+	return false, snack.ErrUnsupportedPlatform
+}
+
+func versionCmp(_ context.Context, _, _ string) (int, error) {
+	return 0, snack.ErrUnsupportedPlatform
+}
+
 func upgradePackages(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
 	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
 }

@@ -232,43 +232,21 @@ func versionCmp(_ context.Context, ver1, ver2 string) (int, error) {
 	return semverCmp(ver1, ver2), nil
 }
 
-// autoremove is a no-op for snap. Snaps are self-contained and do not
-// have orphan dependencies.
-func autoremove(_ context.Context, _ ...snack.Option) error {
-	return nil
-}
-
-// clean removes old disabled snap revisions to free disk space.
-// It runs `snap list --all` to find disabled revisions, then removes
-// each one with `snap remove --revision=<rev> <name>`.
 func clean(ctx context.Context) error {
+	// Remove disabled snap revisions to free up space
 	out, err := run(ctx, []string{"list", "--all"})
 	if err != nil {
-		return fmt.Errorf("snap clean: %w", err)
+		return err
 	}
-	// Parse output for disabled revisions
-	// Header: Name  Version  Rev  Tracking  Publisher  Notes
-	// Disabled snaps have "disabled" in the Notes column
-	lines := strings.Split(out, "\n")
-	for i, line := range lines {
-		if i == 0 { // skip header
-			continue
-		}
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
+	for _, line := range strings.Split(out, "\n") {
 		if !strings.Contains(line, "disabled") {
 			continue
 		}
 		fields := strings.Fields(line)
-		if len(fields) < 3 {
-			continue
-		}
-		name := fields[0]
-		rev := fields[2]
-		if _, err := run(ctx, []string{"remove", "--revision=" + rev, name}); err != nil {
-			return fmt.Errorf("snap clean %s rev %s: %w", name, rev, err)
+		if len(fields) >= 3 {
+			name := fields[0]
+			rev := fields[2]
+			_, _ = run(ctx, []string{"remove", name, "--revision=" + rev})
 		}
 	}
 	return nil
@@ -293,14 +271,9 @@ func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Opt
 			toUpgrade = append(toUpgrade, t)
 		}
 	}
-	if len(toUpgrade) > 0 {
-		for _, t := range toUpgrade {
-			cmd := exec.CommandContext(ctx, "snap", "refresh", t.Name)
-			var stderr bytes.Buffer
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return snack.InstallResult{}, fmt.Errorf("snap refresh %s: %w: %s", t.Name, err, stderr.String())
-			}
+	for _, t := range toUpgrade {
+		if _, err := run(ctx, []string{"refresh", t.Name}); err != nil {
+			return snack.InstallResult{}, fmt.Errorf("snap refresh %s: %w", t.Name, err)
 		}
 	}
 	var upgraded []snack.Package

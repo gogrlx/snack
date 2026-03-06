@@ -220,11 +220,8 @@ func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Opt
 	if len(toUpgrade) > 0 {
 		for _, t := range toUpgrade {
 			args := []string{"update", "-y", t.Name}
-			cmd := exec.CommandContext(ctx, "flatpak", args...)
-			var stderr bytes.Buffer
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return snack.InstallResult{}, fmt.Errorf("flatpak update %s: %w: %s", t.Name, err, stderr.String())
+			if _, err := run(ctx, args); err != nil {
+				return snack.InstallResult{}, fmt.Errorf("flatpak update %s: %w", t.Name, err)
 			}
 		}
 	}

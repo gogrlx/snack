@@ -11,6 +11,7 @@ var (
 	_ snack.VersionQuerier = (*Ports)(nil)
 	_ snack.Cleaner        = (*Ports)(nil)
 	_ snack.FileOwner      = (*Ports)(nil)
+	_ snack.NameNormalizer = (*Ports)(nil)
 )
 
 // LatestVersion returns the latest available version from configured repositories.
@@ -29,13 +30,11 @@ func (p *Ports) UpgradeAvailable(ctx context.Context, pkg string) (bool, error) 
 }
 
 // VersionCmp compares two version strings.
-// OpenBSD has no native version comparison tool, so this uses a simple
-// lexicographic comparison of the version strings.
 func (p *Ports) VersionCmp(ctx context.Context, ver1, ver2 string) (int, error) {
 	return versionCmp(ctx, ver1, ver2)
 }
 
-// Autoremove removes packages no longer required as dependencies.
+// Autoremove removes packages that are no longer needed.
 func (p *Ports) Autoremove(ctx context.Context, opts ...snack.Option) error {
 	p.Lock()
 	defer p.Unlock()

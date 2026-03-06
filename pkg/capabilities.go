@@ -11,6 +11,7 @@ var (
 	_ snack.VersionQuerier = (*Pkg)(nil)
 	_ snack.Cleaner        = (*Pkg)(nil)
 	_ snack.FileOwner      = (*Pkg)(nil)
+	_ snack.NameNormalizer = (*Pkg)(nil)
 )
 
 // LatestVersion returns the latest available version from configured repositories.

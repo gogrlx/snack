@@ -402,8 +402,8 @@ func TestCapabilities(t *testing.T) {
 	if caps.Groups {
 		t.Error("expected Groups=false")
 	}
-	if caps.NameNormalize {
-		t.Error("expected NameNormalize=false")
+	if !caps.NameNormalize {
+		t.Error("expected NameNormalize=true")
 	}
 	if !caps.PackageUpgrade {
 		t.Error("expected PackageUpgrade=true")

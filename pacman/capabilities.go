@@ -12,6 +12,7 @@ var (
 	_ snack.Cleaner        = (*Pacman)(nil)
 	_ snack.FileOwner      = (*Pacman)(nil)
 	_ snack.Grouper        = (*Pacman)(nil)
+	_ snack.NameNormalizer = (*Pacman)(nil)
 	_ snack.DryRunner      = (*Pacman)(nil)
 )
 

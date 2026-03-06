@@ -183,3 +183,55 @@ func version(ctx context.Context, pkg string) (string, error) {
 	}
 	return p.Version, nil
 }
+
+func autoremove(ctx context.Context, opts ...snack.Option) error {
+	o := snack.ApplyOptions(opts...)
+	// pkg_delete -a removes all packages not required by other packages
+	_, err := runCmd(ctx, "pkg_delete", []string{"-a"}, o)
+	return err
+}
+
+func clean(_ context.Context) error {
+	// OpenBSD doesn't cache packages by default, no-op
+	return nil
+}
+
+func fileList(ctx context.Context, pkg string) ([]string, error) {
+	out, err := runCmd(ctx, "pkg_info", []string{"-L", pkg}, snack.Options{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 1") {
+			return nil, fmt.Errorf("ports fileList %s: %w", pkg, snack.ErrNotInstalled)
+		}
+		return nil, fmt.Errorf("ports fileList: %w", err)
+	}
+	var files []string
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "Information for") {
+			continue
+		}
+		if strings.HasPrefix(line, "Files:") {
+			continue
+		}
+		if strings.HasPrefix(line, "/") {
+			files = append(files, line)
+		}
+	}
+	return files, nil
+}
+
+func owner(ctx context.Context, path string) (string, error) {
+	out, err := runCmd(ctx, "pkg_info", []string{"-E", path}, snack.Options{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 1") {
+			return "", fmt.Errorf("ports owner %s: %w", path, snack.ErrNotFound)
+		}
+		return "", fmt.Errorf("ports owner: %w", err)
+	}
+	out = strings.TrimSpace(out)
+	if out == "" {
+		return "", fmt.Errorf("ports owner %s: %w", path, snack.ErrNotFound)
+	}
+	// Output is the package name
+	return strings.Split(out, "\n")[0], nil
+}

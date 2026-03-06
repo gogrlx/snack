@@ -81,6 +81,16 @@ func (s *Snap) Version(ctx context.Context, pkg string) (string, error) {
 	return version(ctx, pkg)
 }
 
+// NormalizeName returns the canonical form of a snap name.
+func (s *Snap) NormalizeName(name string) string {
+	return normalizeName(name)
+}
+
+// ParseArch extracts the architecture from a snap name if present.
+func (s *Snap) ParseArch(name string) (string, string) {
+	return parseArch(name)
+}
+
 // Verify interface compliance at compile time.
 var _ snack.Manager = (*Snap)(nil)
 var _ snack.PackageUpgrader = (*Snap)(nil)

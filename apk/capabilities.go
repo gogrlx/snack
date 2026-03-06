@@ -11,6 +11,7 @@ var (
 	_ snack.VersionQuerier = (*Apk)(nil)
 	_ snack.Cleaner        = (*Apk)(nil)
 	_ snack.FileOwner      = (*Apk)(nil)
+	_ snack.NameNormalizer = (*Apk)(nil)
 	_ snack.DryRunner      = (*Apk)(nil)
 )
 

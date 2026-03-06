@@ -83,6 +83,16 @@ func (p *Pacman) Version(ctx context.Context, pkg string) (string, error) {
 	return version(ctx, pkg)
 }
 
+// NormalizeName returns the canonical form of a package name.
+func (p *Pacman) NormalizeName(name string) string {
+	return normalizeName(name)
+}
+
+// ParseArch extracts the architecture from a package name if present.
+func (p *Pacman) ParseArch(name string) (string, string) {
+	return parseArchNormalize(name)
+}
+
 // Verify interface compliance at compile time.
 var _ snack.Manager = (*Pacman)(nil)
 var _ snack.PackageUpgrader = (*Pacman)(nil)

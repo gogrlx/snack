@@ -81,6 +81,16 @@ func (f *Flatpak) Version(ctx context.Context, pkg string) (string, error) {
 	return version(ctx, pkg)
 }
 
+// NormalizeName returns the canonical form of a flatpak app ID.
+func (f *Flatpak) NormalizeName(name string) string {
+	return normalizeName(name)
+}
+
+// ParseArch extracts the architecture from a flatpak reference if present.
+func (f *Flatpak) ParseArch(name string) (string, string) {
+	return parseRef(name)
+}
+
 // Verify interface compliance at compile time.
 var _ snack.Manager = (*Flatpak)(nil)
 var _ snack.PackageUpgrader = (*Flatpak)(nil)

@@ -17,9 +17,12 @@ func New() *Apk {
 	return &Apk{}
 }
 
-// compile-time check
-var _ snack.Manager = (*Apk)(nil)
-var _ snack.PackageUpgrader = (*Apk)(nil)
+// Compile-time interface checks.
+var (
+	_ snack.Manager         = (*Apk)(nil)
+	_ snack.PackageUpgrader = (*Apk)(nil)
+	_ snack.NameNormalizer  = (*Apk)(nil)
+)
 
 // Name returns "apk".
 func (a *Apk) Name() string { return "apk" }
@@ -92,4 +95,14 @@ func (a *Apk) UpgradePackages(ctx context.Context, pkgs []snack.Target, opts ...
 	a.Lock()
 	defer a.Unlock()
 	return upgradePackages(ctx, pkgs, opts...)
+}
+
+// NormalizeName returns the canonical form of a package name.
+func (a *Apk) NormalizeName(name string) string {
+	return normalizeName(name)
+}
+
+// ParseArch extracts the architecture from a package name if present.
+func (a *Apk) ParseArch(name string) (string, string) {
+	return parseArchNormalize(name)
 }

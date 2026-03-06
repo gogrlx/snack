@@ -44,45 +44,6 @@ func listUpgrades(ctx context.Context) ([]snack.Package, error) {
 	return parseUpgradeSimulation(string(out)), nil
 }
 
-// parseUpgradeSimulation parses `apk upgrade --simulate` output.
-// Lines look like: "(1/3) Upgrading pkg (oldver -> newver)"
-func parseUpgradeSimulation(output string) []snack.Package {
-	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
-		line = strings.TrimSpace(line)
-		if !strings.Contains(line, "Upgrading") {
-			continue
-		}
-		// "(1/3) Upgrading pkg (oldver -> newver)"
-		idx := strings.Index(line, "Upgrading ")
-		if idx < 0 {
-			continue
-		}
-		rest := line[idx+len("Upgrading "):]
-		// "pkg (oldver -> newver)"
-		parts := strings.SplitN(rest, " (", 2)
-		if len(parts) < 1 {
-			continue
-		}
-		name := strings.TrimSpace(parts[0])
-		var ver string
-		if len(parts) == 2 {
-			// "oldver -> newver)"
-			verPart := strings.TrimSuffix(parts[1], ")")
-			arrow := strings.Split(verPart, " -> ")
-			if len(arrow) == 2 {
-				ver = strings.TrimSpace(arrow[1])
-			}
-		}
-		pkgs = append(pkgs, snack.Package{
-			Name:      name,
-			Version:   ver,
-			Installed: true,
-		})
-	}
-	return pkgs
-}
-
 func upgradeAvailable(ctx context.Context, pkg string) (bool, error) {
 	upgrades, err := listUpgrades(ctx)
 	if err != nil {

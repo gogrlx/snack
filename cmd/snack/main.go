@@ -47,6 +47,9 @@ behind a single, consistent interface.`,
 		holdCmd(),
 		unholdCmd(),
 		cleanCmd(),
+		repoCmd(),
+		keyCmd(),
+		groupCmd(),
 		detectCmd(),
 		versionCmd(),
 	)
@@ -409,6 +412,240 @@ func versionCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Printf("snack %s\n", version)
+		},
+	}
+}
+
+func repoCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "repo",
+		Short: "Manage package repositories",
+	}
+	cmd.AddCommand(repoListCmd(), repoAddCmd(), repoRemoveCmd())
+	return cmd
+}
+
+func repoListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List configured repositories",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			rm, ok := m.(snack.RepoManager)
+			if !ok {
+				return fmt.Errorf("%s does not support repository management", m.Name())
+			}
+			repos, err := rm.ListRepos(cmd.Context())
+			if err != nil {
+				return err
+			}
+			for _, r := range repos {
+				status := "disabled"
+				if r.Enabled {
+					status = "enabled"
+				}
+				fmt.Printf("%s %s [%s]\n", r.ID, r.URL, status)
+			}
+			return nil
+		},
+	}
+}
+
+func repoAddCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "add <url>",
+		Short: "Add a package repository",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			rm, ok := m.(snack.RepoManager)
+			if !ok {
+				return fmt.Errorf("%s does not support repository management", m.Name())
+			}
+			repo := snack.Repository{
+				URL:     args[0],
+				Enabled: true,
+			}
+			return rm.AddRepo(cmd.Context(), repo)
+		},
+	}
+}
+
+func repoRemoveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "remove <id>",
+		Short: "Remove a package repository",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			rm, ok := m.(snack.RepoManager)
+			if !ok {
+				return fmt.Errorf("%s does not support repository management", m.Name())
+			}
+			return rm.RemoveRepo(cmd.Context(), args[0])
+		},
+	}
+}
+
+func keyCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "key",
+		Short: "Manage GPG signing keys",
+	}
+	cmd.AddCommand(keyListCmd(), keyAddCmd(), keyRemoveCmd())
+	return cmd
+}
+
+func keyListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List trusted signing keys",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			km, ok := m.(snack.KeyManager)
+			if !ok {
+				return fmt.Errorf("%s does not support key management", m.Name())
+			}
+			keys, err := km.ListKeys(cmd.Context())
+			if err != nil {
+				return err
+			}
+			for _, k := range keys {
+				fmt.Println(k)
+			}
+			return nil
+		},
+	}
+}
+
+func keyAddCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "add <key>",
+		Short: "Add a GPG signing key (URL, file path, or key ID)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			km, ok := m.(snack.KeyManager)
+			if !ok {
+				return fmt.Errorf("%s does not support key management", m.Name())
+			}
+			return km.AddKey(cmd.Context(), args[0])
+		},
+	}
+}
+
+func keyRemoveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "remove <key-id>",
+		Short: "Remove a GPG signing key",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			km, ok := m.(snack.KeyManager)
+			if !ok {
+				return fmt.Errorf("%s does not support key management", m.Name())
+			}
+			return km.RemoveKey(cmd.Context(), args[0])
+		},
+	}
+}
+
+func groupCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "group",
+		Short: "Manage package groups",
+	}
+	cmd.AddCommand(groupListCmd(), groupInfoCmd(), groupInstallCmd())
+	return cmd
+}
+
+func groupListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List available package groups",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			g, ok := m.(snack.Grouper)
+			if !ok {
+				return fmt.Errorf("%s does not support package groups", m.Name())
+			}
+			groups, err := g.GroupList(cmd.Context())
+			if err != nil {
+				return err
+			}
+			for _, grp := range groups {
+				fmt.Println(grp)
+			}
+			return nil
+		},
+	}
+}
+
+func groupInfoCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "info <group>",
+		Short: "Show packages in a group",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			g, ok := m.(snack.Grouper)
+			if !ok {
+				return fmt.Errorf("%s does not support package groups", m.Name())
+			}
+			pkgs, err := g.GroupInfo(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+			for _, p := range pkgs {
+				fmt.Println(p.Name)
+			}
+			return nil
+		},
+	}
+}
+
+func groupInstallCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "install <group>",
+		Short: "Install all packages in a group",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m, err := getManager()
+			if err != nil {
+				return err
+			}
+			g, ok := m.(snack.Grouper)
+			if !ok {
+				return fmt.Errorf("%s does not support package groups", m.Name())
+			}
+			return g.GroupInstall(cmd.Context(), args[0], opts()...)
 		},
 	}
 }

@@ -122,14 +122,15 @@ func TestGetManager(t *testing.T) {
 		t.Error("expected non-empty manager name")
 	}
 
-	// Explicit override
-	flagMgr = "apt"
-	m, err = getManager()
+	// Explicit override - use the detected manager's name
+	// since not all managers are available on all platforms
+	flagMgr = m.Name()
+	m2, err := getManager()
 	if err != nil {
-		t.Fatalf("getManager() with --manager=apt failed: %v", err)
+		t.Fatalf("getManager() with --manager=%s failed: %v", flagMgr, err)
 	}
-	if m.Name() != "apt" {
-		t.Errorf("expected Name()=apt, got %q", m.Name())
+	if m2.Name() != flagMgr {
+		t.Errorf("expected Name()=%s, got %q", flagMgr, m2.Name())
 	}
 
 	// Unknown manager
