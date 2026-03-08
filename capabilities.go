@@ -4,16 +4,16 @@ package snack
 // Useful for grlx to determine what operations are available before
 // attempting them.
 type Capabilities struct {
-	VersionQuery    bool
-	Hold            bool
-	Clean           bool
-	FileOwnership   bool
-	RepoManagement  bool
-	KeyManagement   bool
-	Groups          bool
-	NameNormalize   bool
-	DryRun          bool
-	PackageUpgrade  bool
+	VersionQuery   bool
+	Hold           bool
+	Clean          bool
+	FileOwnership  bool
+	RepoManagement bool
+	KeyManagement  bool
+	Groups         bool
+	NameNormalize  bool
+	DryRun         bool
+	PackageUpgrade bool
 }
 
 // GetCapabilities probes a Manager for all optional interface support.
@@ -29,15 +29,15 @@ func GetCapabilities(m Manager) Capabilities {
 	_, dr := m.(DryRunner)
 	_, pu := m.(PackageUpgrader)
 	return Capabilities{
-		VersionQuery:    vq,
-		Hold:            h,
-		Clean:           c,
-		FileOwnership:   fo,
-		RepoManagement:  rm,
-		KeyManagement:   km,
-		Groups:          g,
-		NameNormalize:   nn,
-		DryRun:          dr,
-		PackageUpgrade:  pu,
+		VersionQuery:   vq,
+		Hold:           h,
+		Clean:          c,
+		FileOwnership:  fo,
+		RepoManagement: rm,
+		KeyManagement:  km,
+		Groups:         g,
+		NameNormalize:  nn,
+		DryRun:         dr,
+		PackageUpgrade: pu,
 	}
 }

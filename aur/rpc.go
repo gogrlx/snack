@@ -115,4 +115,3 @@ func rpcInfo(ctx context.Context, pkg string) (*snack.Package, error) {
 	p := resp.Results[0].toPackage()
 	return &p, nil
 }
-

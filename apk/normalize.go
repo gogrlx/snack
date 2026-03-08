@@ -17,14 +17,14 @@ func normalizeName(name string) string {
 //   - package-aarch64
 func parseArchNormalize(name string) (string, string) {
 	knownArchs := map[string]bool{
-		"x86_64":   true,
-		"x86":      true,
-		"aarch64":  true,
-		"armhf":    true,
-		"armv7":    true,
-		"ppc64le":  true,
-		"s390x":    true,
-		"riscv64":  true,
+		"x86_64":      true,
+		"x86":         true,
+		"aarch64":     true,
+		"armhf":       true,
+		"armv7":       true,
+		"ppc64le":     true,
+		"s390x":       true,
+		"riscv64":     true,
 		"loongarch64": true,
 	}
 

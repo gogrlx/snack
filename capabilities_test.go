@@ -18,15 +18,15 @@ func (m *mockManager) Remove(context.Context, []snack.Target, ...snack.Option) (
 	return snack.RemoveResult{}, nil
 }
 func (m *mockManager) Purge(context.Context, []snack.Target, ...snack.Option) error { return nil }
-func (m *mockManager) Upgrade(context.Context, ...snack.Option) error                { return nil }
-func (m *mockManager) Update(context.Context) error                                  { return nil }
-func (m *mockManager) List(context.Context) ([]snack.Package, error)                 { return nil, nil }
-func (m *mockManager) Search(context.Context, string) ([]snack.Package, error)       { return nil, nil }
-func (m *mockManager) Info(context.Context, string) (*snack.Package, error)           { return nil, nil }
-func (m *mockManager) IsInstalled(context.Context, string) (bool, error)             { return false, nil }
-func (m *mockManager) Version(context.Context, string) (string, error)               { return "", nil }
-func (m *mockManager) Available() bool                                               { return true }
-func (m *mockManager) Name() string                                                  { return "mock" }
+func (m *mockManager) Upgrade(context.Context, ...snack.Option) error               { return nil }
+func (m *mockManager) Update(context.Context) error                                 { return nil }
+func (m *mockManager) List(context.Context) ([]snack.Package, error)                { return nil, nil }
+func (m *mockManager) Search(context.Context, string) ([]snack.Package, error)      { return nil, nil }
+func (m *mockManager) Info(context.Context, string) (*snack.Package, error)         { return nil, nil }
+func (m *mockManager) IsInstalled(context.Context, string) (bool, error)            { return false, nil }
+func (m *mockManager) Version(context.Context, string) (string, error)              { return "", nil }
+func (m *mockManager) Available() bool                                              { return true }
+func (m *mockManager) Name() string                                                 { return "mock" }
 
 // fullMockManager implements Manager plus all optional interfaces.
 type fullMockManager struct {

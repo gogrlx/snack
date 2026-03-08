@@ -4,182 +4,25 @@ import (
 	"testing"
 )
 
-func TestParseList(t *testing.T) {
-	input := "bash\t5.1.8-6.el9\tThe GNU Bourne Again shell\ncurl\t7.76.1-23.el9\tA utility for getting files from remote servers\n"
-	pkgs := parseList(input)
-	if len(pkgs) != 2 {
-		t.Fatalf("expected 2 packages, got %d", len(pkgs))
-	}
-	if pkgs[0].Name != "bash" || pkgs[0].Version != "5.1.8-6.el9" {
-		t.Errorf("unexpected pkg[0]: %+v", pkgs[0])
-	}
-	if pkgs[0].Description != "The GNU Bourne Again shell" {
-		t.Errorf("unexpected description: %q", pkgs[0].Description)
-	}
-	if !pkgs[0].Installed {
-		t.Error("expected Installed=true")
-	}
-}
-
-func TestParseInfo(t *testing.T) {
-	input := `Name        : bash
-Version     : 5.1.8
-Release     : 6.el9
-Architecture: x86_64
-Install Date: Mon 01 Jan 2024 12:00:00 AM UTC
-Group       : System Environment/Shells
-Size        : 7896043
-License     : GPLv3+
-Signature   : RSA/SHA256, Mon 01 Jan 2024 12:00:00 AM UTC, Key ID abc123
-Source RPM  : bash-5.1.8-6.el9.src.rpm
-Build Date  : Mon 01 Jan 2024 12:00:00 AM UTC
-Build Host  : builder.example.com
-Packager    : CentOS Buildsys <bugs@centos.org>
-Vendor      : CentOS
-URL         : https://www.gnu.org/software/bash
-Summary     : The GNU Bourne Again shell
-Description :
-The GNU Bourne Again shell (Bash) is a shell or command language
-interpreter that is compatible with the Bourne shell (sh).
-`
-	p := parseInfo(input)
-	if p == nil {
-		t.Fatal("expected package, got nil")
-	}
-	if p.Name != "bash" {
-		t.Errorf("Name = %q, want bash", p.Name)
-	}
-	if p.Version != "5.1.8-6.el9" {
-		t.Errorf("Version = %q, want 5.1.8-6.el9", p.Version)
-	}
-	if p.Arch != "x86_64" {
-		t.Errorf("Arch = %q, want x86_64", p.Arch)
-	}
-	if p.Description != "The GNU Bourne Again shell" {
-		t.Errorf("Description = %q, want 'The GNU Bourne Again shell'", p.Description)
-	}
-}
-
 func TestNormalizeName(t *testing.T) {
 	tests := []struct {
-		input, want string
+		input string
+		want  string
 	}{
+		{"nginx", "nginx"},
 		{"nginx.x86_64", "nginx"},
-		{"curl.aarch64", "curl"},
-		{"bash.noarch", "bash"},
-		{"python3", "python3"},
-	}
-	for _, tt := range tests {
-		got := normalizeName(tt.input)
-		if got != tt.want {
-			t.Errorf("normalizeName(%q) = %q, want %q", tt.input, got, tt.want)
-		}
-	}
-}
-
-func TestParseArchSuffix(t *testing.T) {
-	tests := []struct {
-		input, wantName, wantArch string
-	}{
-		{"nginx.x86_64", "nginx", "x86_64"},
-		{"bash", "bash", ""},
-		{"glibc.i686", "glibc", "i686"},
-	}
-	for _, tt := range tests {
-		name, arch := parseArchSuffix(tt.input)
-		if name != tt.wantName || arch != tt.wantArch {
-			t.Errorf("parseArchSuffix(%q) = (%q, %q), want (%q, %q)", tt.input, name, arch, tt.wantName, tt.wantArch)
-		}
-	}
-}
-
-// --- Edge case tests ---
-
-func TestParseListEmpty(t *testing.T) {
-	pkgs := parseList("")
-	if len(pkgs) != 0 {
-		t.Errorf("expected 0 packages from empty input, got %d", len(pkgs))
-	}
-}
-
-func TestParseListSinglePackage(t *testing.T) {
-	input := "curl\t7.76.1-23.el9\tA utility\n"
-	pkgs := parseList(input)
-	if len(pkgs) != 1 {
-		t.Fatalf("expected 1 package, got %d", len(pkgs))
-	}
-	if pkgs[0].Name != "curl" {
-		t.Errorf("Name = %q, want curl", pkgs[0].Name)
-	}
-}
-
-func TestParseListNoDescription(t *testing.T) {
-	input := "bash\t5.1.8-6.el9\n"
-	pkgs := parseList(input)
-	if len(pkgs) != 1 {
-		t.Fatalf("expected 1 package, got %d", len(pkgs))
-	}
-	if pkgs[0].Description != "" {
-		t.Errorf("Description = %q, want empty", pkgs[0].Description)
-	}
-}
-
-func TestParseListMalformedLines(t *testing.T) {
-	input := "bash\t5.1.8-6.el9\tShell\nno-tab-here\ncurl\t7.76.1\tHTTP tool\n"
-	pkgs := parseList(input)
-	if len(pkgs) != 2 {
-		t.Fatalf("expected 2 packages (skip malformed), got %d", len(pkgs))
-	}
-}
-
-func TestParseInfoEmpty(t *testing.T) {
-	p := parseInfo("")
-	if p != nil {
-		t.Errorf("expected nil from empty input, got %+v", p)
-	}
-}
-
-func TestParseInfoNoName(t *testing.T) {
-	input := `Version     : 1.0
-Architecture: x86_64
-`
-	p := parseInfo(input)
-	if p != nil {
-		t.Errorf("expected nil when no Name field, got %+v", p)
-	}
-}
-
-func TestParseInfoArchField(t *testing.T) {
-	// Test both "Architecture" and "Arch" key forms
-	input := `Name        : test
-Version     : 1.0
-Release     : 1.el9
-Arch        : aarch64
-Summary     : Test package
-`
-	p := parseInfo(input)
-	if p == nil {
-		t.Fatal("expected non-nil package")
-	}
-	if p.Arch != "aarch64" {
-		t.Errorf("Arch = %q, want aarch64", p.Arch)
-	}
-}
-
-func TestNormalizeNameEdgeCases(t *testing.T) {
-	tests := []struct {
-		input, want string
-	}{
+		{"curl.noarch", "curl"},
+		{"kernel.aarch64", "kernel"},
+		{"bash.i686", "bash"},
+		{"glibc.i386", "glibc"},
+		{"libfoo.armv7hl", "libfoo"},
+		{"module.ppc64le", "module"},
+		{"app.s390x", "app"},
+		{"source.src", "source"},
+		{"nodot", "nodot"},
 		{"", ""},
-		{"pkg.unknown.ext", "pkg.unknown.ext"},
-		{"name.with.dots.x86_64", "name.with.dots"},
-		{"python3.11", "python3.11"},
-		{"glibc.s390x", "glibc"},
-		{"kernel.src", "kernel"},
-		{".x86_64", ""},
-		{"pkg.ppc64le", "pkg"},
-		{"pkg.armv7hl", "pkg"},
-		{"pkg.i386", "pkg"},
+		{"pkg.unknown", "pkg.unknown"},
+		{"multi.dot.x86_64", "multi.dot"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
@@ -191,30 +34,202 @@ func TestNormalizeNameEdgeCases(t *testing.T) {
 	}
 }
 
-func TestParseArchSuffixEdgeCases(t *testing.T) {
+func TestParseArchSuffix(t *testing.T) {
 	tests := []struct {
-		input, wantName, wantArch string
+		name     string
+		input    string
+		wantName string
+		wantArch string
 	}{
-		{"", "", ""},
-		{"pkg.i386", "pkg", "i386"},
-		{"pkg.ppc64le", "pkg", "ppc64le"},
-		{"pkg.s390x", "pkg", "s390x"},
-		{"pkg.armv7hl", "pkg", "armv7hl"},
-		{"pkg.src", "pkg", "src"},
-		{"pkg.aarch64", "pkg", "aarch64"},
-		{"pkg.noarch", "pkg", "noarch"},
-		{"pkg.unknown", "pkg.unknown", ""},
-		{"name.with.many.dots.noarch", "name.with.many.dots", "noarch"},
-		{".noarch", "", "noarch"},
-		{"pkg.x86_64.extra", "pkg.x86_64.extra", ""},
+		{"x86_64", "nginx.x86_64", "nginx", "x86_64"},
+		{"noarch", "bash.noarch", "bash", "noarch"},
+		{"aarch64", "kernel.aarch64", "kernel", "aarch64"},
+		{"i686", "glibc.i686", "glibc", "i686"},
+		{"i386", "compat.i386", "compat", "i386"},
+		{"armv7hl", "lib.armv7hl", "lib", "armv7hl"},
+		{"ppc64le", "app.ppc64le", "app", "ppc64le"},
+		{"s390x", "z.s390x", "z", "s390x"},
+		{"src", "pkg.src", "pkg", "src"},
+		{"no dot", "curl", "curl", ""},
+		{"unknown arch", "pkg.foobar", "pkg.foobar", ""},
+		{"empty", "", "", ""},
+		{"multiple dots", "a.b.x86_64", "a.b", "x86_64"},
+		{"dot but not arch", "libfoo.so", "libfoo.so", ""},
 	}
 	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			name, arch := parseArchSuffix(tt.input)
-			if name != tt.wantName || arch != tt.wantArch {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotArch := parseArchSuffix(tt.input)
+			if gotName != tt.wantName || gotArch != tt.wantArch {
 				t.Errorf("parseArchSuffix(%q) = (%q, %q), want (%q, %q)",
-					tt.input, name, arch, tt.wantName, tt.wantArch)
+					tt.input, gotName, gotArch, tt.wantName, tt.wantArch)
 			}
 		})
 	}
+}
+
+func TestParseList(t *testing.T) {
+	input := "bash\t5.2.15-3.fc38\tThe GNU Bourne Again shell\n" +
+		"curl\t8.0.1-1.fc38\tA utility for getting files from remote servers\n"
+	pkgs := parseList(input)
+	if len(pkgs) != 2 {
+		t.Fatalf("expected 2 packages, got %d", len(pkgs))
+	}
+	if pkgs[0].Name != "bash" || pkgs[0].Version != "5.2.15-3.fc38" {
+		t.Errorf("unexpected first package: %+v", pkgs[0])
+	}
+	if pkgs[0].Description != "The GNU Bourne Again shell" {
+		t.Errorf("unexpected description: %q", pkgs[0].Description)
+	}
+	if !pkgs[0].Installed {
+		t.Error("expected Installed=true")
+	}
+}
+
+func TestParseListEdgeCases(t *testing.T) {
+	t.Run("empty input", func(t *testing.T) {
+		pkgs := parseList("")
+		if len(pkgs) != 0 {
+			t.Errorf("expected 0 packages, got %d", len(pkgs))
+		}
+	})
+
+	t.Run("whitespace only", func(t *testing.T) {
+		pkgs := parseList("  \n\n  \n")
+		if len(pkgs) != 0 {
+			t.Errorf("expected 0 packages, got %d", len(pkgs))
+		}
+	})
+
+	t.Run("single entry no description", func(t *testing.T) {
+		pkgs := parseList("vim\t9.0.1\n")
+		if len(pkgs) != 1 {
+			t.Fatalf("expected 1 package, got %d", len(pkgs))
+		}
+		if pkgs[0].Name != "vim" || pkgs[0].Version != "9.0.1" {
+			t.Errorf("unexpected package: %+v", pkgs[0])
+		}
+		if pkgs[0].Description != "" {
+			t.Errorf("expected empty description, got %q", pkgs[0].Description)
+		}
+	})
+
+	t.Run("single field line skipped", func(t *testing.T) {
+		pkgs := parseList("justname\n")
+		if len(pkgs) != 0 {
+			t.Errorf("expected 0 packages (need >=2 tab fields), got %d", len(pkgs))
+		}
+	})
+
+	t.Run("description with tabs", func(t *testing.T) {
+		pkgs := parseList("pkg\t1.0\tA description\twith tabs\n")
+		if len(pkgs) != 1 {
+			t.Fatalf("expected 1 package, got %d", len(pkgs))
+		}
+		// SplitN with 3 means the third part includes everything after the second tab
+		if pkgs[0].Description != "A description\twith tabs" {
+			t.Errorf("unexpected description: %q", pkgs[0].Description)
+		}
+	})
+}
+
+func TestParseInfo(t *testing.T) {
+	input := `Name        : curl
+Version     : 8.0.1
+Release     : 1.fc38
+Architecture: x86_64
+Summary     : A utility for getting files from remote servers
+`
+	pkg := parseInfo(input)
+	if pkg == nil {
+		t.Fatal("expected non-nil package")
+	}
+	if pkg.Name != "curl" {
+		t.Errorf("expected name 'curl', got %q", pkg.Name)
+	}
+	if pkg.Version != "8.0.1-1.fc38" {
+		t.Errorf("expected version '8.0.1-1.fc38', got %q", pkg.Version)
+	}
+	if pkg.Arch != "x86_64" {
+		t.Errorf("expected arch 'x86_64', got %q", pkg.Arch)
+	}
+	if pkg.Description != "A utility for getting files from remote servers" {
+		t.Errorf("unexpected description: %q", pkg.Description)
+	}
+}
+
+func TestParseInfoEdgeCases(t *testing.T) {
+	t.Run("empty input", func(t *testing.T) {
+		pkg := parseInfo("")
+		if pkg != nil {
+			t.Error("expected nil for empty input")
+		}
+	})
+
+	t.Run("name only", func(t *testing.T) {
+		pkg := parseInfo("Name : bash\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Name != "bash" {
+			t.Errorf("expected bash, got %q", pkg.Name)
+		}
+	})
+
+	t.Run("no name returns nil", func(t *testing.T) {
+		pkg := parseInfo("Version : 1.0\nArch : x86_64\n")
+		if pkg != nil {
+			t.Error("expected nil when no Name field")
+		}
+	})
+
+	t.Run("version without release", func(t *testing.T) {
+		pkg := parseInfo("Name : test\nVersion : 2.5\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Version != "2.5" {
+			t.Errorf("expected version '2.5', got %q", pkg.Version)
+		}
+	})
+
+	t.Run("release without version", func(t *testing.T) {
+		// Release only appends if version is non-empty
+		pkg := parseInfo("Name : test\nRelease : 3.el9\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Version != "" {
+			t.Errorf("expected empty version (release alone shouldn't set it), got %q", pkg.Version)
+		}
+	})
+
+	t.Run("arch key variant", func(t *testing.T) {
+		pkg := parseInfo("Name : test\nArch : aarch64\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Arch != "aarch64" {
+			t.Errorf("expected aarch64, got %q", pkg.Arch)
+		}
+	})
+
+	t.Run("no colon lines ignored", func(t *testing.T) {
+		pkg := parseInfo("Name : test\nrandom line\nSummary : A tool\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Description != "A tool" {
+			t.Errorf("unexpected description: %q", pkg.Description)
+		}
+	})
+
+	t.Run("value with colons", func(t *testing.T) {
+		pkg := parseInfo("Name : myapp\nSummary : A tool: does things: well\n")
+		if pkg == nil {
+			t.Fatal("expected non-nil")
+		}
+		if pkg.Description != "A tool: does things: well" {
+			t.Errorf("unexpected description: %q", pkg.Description)
+		}
+	})
 }

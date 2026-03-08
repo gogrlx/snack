@@ -235,10 +235,10 @@ func clean(ctx context.Context) error {
 // brewInfoJSON represents the JSON output from `brew info --json=v2`.
 type brewInfoJSON struct {
 	Formulae []struct {
-		Name        string `json:"name"`
-		FullName    string `json:"full_name"`
-		Desc        string `json:"desc"`
-		Versions    struct {
+		Name     string `json:"name"`
+		FullName string `json:"full_name"`
+		Desc     string `json:"desc"`
+		Versions struct {
 			Stable string `json:"stable"`
 		} `json:"versions"`
 		Installed []struct {
@@ -246,24 +246,24 @@ type brewInfoJSON struct {
 		} `json:"installed"`
 	} `json:"formulae"`
 	Casks []struct {
-		Token   string `json:"token"`
+		Token   string   `json:"token"`
 		Name    []string `json:"name"`
-		Desc    string `json:"desc"`
-		Version string `json:"version"`
+		Desc    string   `json:"desc"`
+		Version string   `json:"version"`
 	} `json:"casks"`
 }
 
 // brewOutdatedJSON represents the JSON output from `brew outdated --json=v2`.
 type brewOutdatedJSON struct {
 	Formulae []struct {
-		Name             string `json:"name"`
+		Name              string   `json:"name"`
 		InstalledVersions []string `json:"installed_versions"`
-		CurrentVersion   string `json:"current_version"`
+		CurrentVersion    string   `json:"current_version"`
 	} `json:"formulae"`
 	Casks []struct {
-		Name             string `json:"name"`
+		Name              string `json:"name"`
 		InstalledVersions string `json:"installed_versions"`
-		CurrentVersion   string `json:"current_version"`
+		CurrentVersion    string `json:"current_version"`
 	} `json:"casks"`
 }
 
