@@ -191,7 +191,6 @@ func listRepos(_ context.Context) ([]snack.Repository, error) {
 	return repos, nil
 }
 
-
 func addRepo(ctx context.Context, repo snack.Repository) error {
 	repoLine := repo.URL
 	if repo.Type != "" {

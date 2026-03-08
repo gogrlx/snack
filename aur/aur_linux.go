@@ -378,5 +378,3 @@ func upgradePackages(ctx context.Context, pkgs []snack.Target, opts ...snack.Opt
 	allOpts := append([]snack.Option{snack.WithReinstall()}, opts...)
 	return install(ctx, pkgs, allOpts...)
 }
-
-

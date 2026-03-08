@@ -23,7 +23,7 @@ func TestSplitNameVersion(t *testing.T) {
 		{"my-pkg-name-0.1-r0", "my-pkg-name", "0.1-r0"},
 		{"a-b-c-3.0", "a-b-c", "3.0"},
 		{"single", "single", ""},
-		{"-1.0", "-1.0", ""},  // no digit follows last hyphen at position > 0
+		{"-1.0", "-1.0", ""}, // no digit follows last hyphen at position > 0
 		{"pkg-0", "pkg", "0"},
 	}
 	for _, tt := range tests {
@@ -289,10 +289,10 @@ func TestParseInfoEdgeCases(t *testing.T) {
 
 func TestParseInfoNameVersion(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   string
-		wantN   string
-		wantV   string
+		name  string
+		input string
+		wantN string
+		wantV string
 	}{
 		{
 			name:  "standard",
@@ -435,8 +435,8 @@ func TestParseUpgradeSimulation(t *testing.T) {
 			wantLen: 0,
 		},
 		{
-			name:  "single upgrade",
-			input: "(1/1) Upgrading curl (8.5.0-r0 -> 8.6.0-r0)\n",
+			name:    "single upgrade",
+			input:   "(1/1) Upgrading curl (8.5.0-r0 -> 8.6.0-r0)\n",
 			wantLen: 1,
 			wantPkgs: []snack.Package{
 				{Name: "curl", Version: "8.6.0-r0", Installed: true},
@@ -462,8 +462,8 @@ OK: 123 MiB in 45 packages
 			wantLen: 0,
 		},
 		{
-			name:  "upgrade without version parens",
-			input: "(1/1) Upgrading busybox\n",
+			name:    "upgrade without version parens",
+			input:   "(1/1) Upgrading busybox\n",
 			wantLen: 1,
 			wantPkgs: []snack.Package{
 				{Name: "busybox", Version: "", Installed: true},

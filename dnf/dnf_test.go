@@ -8,16 +8,16 @@ import (
 
 // Compile-time interface assertions — DNF implements all optional interfaces.
 var (
-	_ snack.Manager        = (*DNF)(nil)
-	_ snack.VersionQuerier = (*DNF)(nil)
-	_ snack.Holder         = (*DNF)(nil)
-	_ snack.Cleaner        = (*DNF)(nil)
-	_ snack.FileOwner      = (*DNF)(nil)
-	_ snack.RepoManager    = (*DNF)(nil)
-	_ snack.KeyManager     = (*DNF)(nil)
-	_ snack.Grouper        = (*DNF)(nil)
-	_ snack.NameNormalizer = (*DNF)(nil)
-	_ snack.DryRunner      = (*DNF)(nil)
+	_ snack.Manager         = (*DNF)(nil)
+	_ snack.VersionQuerier  = (*DNF)(nil)
+	_ snack.Holder          = (*DNF)(nil)
+	_ snack.Cleaner         = (*DNF)(nil)
+	_ snack.FileOwner       = (*DNF)(nil)
+	_ snack.RepoManager     = (*DNF)(nil)
+	_ snack.KeyManager      = (*DNF)(nil)
+	_ snack.Grouper         = (*DNF)(nil)
+	_ snack.NameNormalizer  = (*DNF)(nil)
+	_ snack.DryRunner       = (*DNF)(nil)
 	_ snack.PackageUpgrader = (*DNF)(nil)
 )
 

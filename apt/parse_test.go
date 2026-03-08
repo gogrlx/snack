@@ -14,8 +14,8 @@ func TestParseList_EdgeCases(t *testing.T) {
 	}{
 		{"empty", "", 0},
 		{"whitespace_only", "  \n  \n  ", 0},
-		{"single_tab_field", "bash", 0},       // needs at least 2 tab-separated fields
-		{"no_description", "bash\t5.2-1", 1},  // 2 fields is OK
+		{"single_tab_field", "bash", 0},      // needs at least 2 tab-separated fields
+		{"no_description", "bash\t5.2-1", 1}, // 2 fields is OK
 		{"with_description", "bash\t5.2-1\tGNU Bourne Again SHell", 1},
 		{"blank_lines_mixed", "\nbash\t5.2-1\n\ncurl\t7.88\n\n", 2},
 		{"trailing_newline", "bash\t5.2-1\n", 1},
