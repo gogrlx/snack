@@ -10,7 +10,7 @@ import (
 
 func available() bool { return false }
 
-func install(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
+func (a *AUR) install(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
 	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
 }
 
@@ -22,23 +22,11 @@ func purge(_ context.Context, _ []snack.Target, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
 
-func upgrade(_ context.Context, _ ...snack.Option) error {
-	return snack.ErrUnsupportedPlatform
-}
-
-func update(_ context.Context) error {
+func (a *AUR) upgradeAll(_ context.Context, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
 
 func list(_ context.Context) ([]snack.Package, error) {
-	return nil, snack.ErrUnsupportedPlatform
-}
-
-func search(_ context.Context, _ string) ([]snack.Package, error) {
-	return nil, snack.ErrUnsupportedPlatform
-}
-
-func info(_ context.Context, _ string) (*snack.Package, error) {
 	return nil, snack.ErrUnsupportedPlatform
 }
 
@@ -70,10 +58,6 @@ func autoremove(_ context.Context, _ ...snack.Option) error {
 	return snack.ErrUnsupportedPlatform
 }
 
-func clean(_ context.Context) error {
+func (a *AUR) cleanBuildDir() error {
 	return snack.ErrUnsupportedPlatform
-}
-
-func upgradePackages(_ context.Context, _ []snack.Target, _ ...snack.Option) (snack.InstallResult, error) {
-	return snack.InstallResult{}, snack.ErrUnsupportedPlatform
 }

@@ -14,7 +14,7 @@ Part of the [grlx](https://github.com/gogrlx/grlx) ecosystem.
 | Package | Manager | Platform | Status |
 |---------|---------|----------|--------|
 | `pacman` | pacman | Arch Linux | ✅ |
-| `aur` | AUR (makepkg) | Arch Linux | ✅ |
+| `aur` | AUR (RPC + makepkg) | Arch Linux | ✅ |
 | `apk` | apk-tools | Alpine Linux | ✅ |
 | `apt` | APT (apt-get/apt-cache) | Debian/Ubuntu | ✅ |
 | `dpkg` | dpkg | Debian/Ubuntu | ✅ |
@@ -34,7 +34,7 @@ Part of the [grlx](https://github.com/gogrlx/grlx) ecosystem.
 |----------|:------------:|:----:|:-----:|:---------:|:--------:|:-------:|:------:|:--------:|:------:|:----------:|
 | apt      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ | ✅ | ✅ |
 | pacman   | ✅ | - | ✅ | ✅ | - | - | ✅ | ✅ | ✅ | ✅ |
-| aur      | ✅ | - | ✅ | - | - | - | - | ✅ | - | ✅ |
+| aur      | ✅ | - | ✅ | - | - | - | - | - | - | ✅ |
 | apk      | ✅ | - | ✅ | ✅ | - | - | - | ✅ | ✅ | ✅ |
 | dnf      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | flatpak  | ✅ | - | ✅ | - | ✅ | - | - | ✅ | - | ✅ |

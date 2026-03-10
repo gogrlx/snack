@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/gogrlx/snack"
 )
@@ -114,4 +115,25 @@ func rpcInfo(ctx context.Context, pkg string) (*snack.Package, error) {
 	}
 	p := resp.Results[0].toPackage()
 	return &p, nil
+}
+
+// rpcInfoMulti returns info about multiple AUR packages in a single request.
+func rpcInfoMulti(ctx context.Context, pkgs []string) (map[string]rpcResult, error) {
+	if len(pkgs) == 0 {
+		return nil, nil
+	}
+	params := make([]string, len(pkgs))
+	for i, p := range pkgs {
+		params[i] = "arg[]=" + url.QueryEscape(p)
+	}
+	endpoint := rpcBaseURL + "/info?" + strings.Join(params, "&")
+	resp, err := rpcGet(ctx, endpoint)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]rpcResult, len(resp.Results))
+	for _, r := range resp.Results {
+		result[r.Name] = r
+	}
+	return result, nil
 }
