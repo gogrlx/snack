@@ -7,9 +7,6 @@ before:
   hooks:
     - go mod tidy
 
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
-
 builds:
   - main: ./cmd/snack/
     id: snack
@@ -44,7 +41,7 @@ archives:
 nfpms:
   - id: snack
     package_name: snack
-    builds: [snack]
+    ids: [snack]
     formats: [apk, deb, rpm]
     bindir: /usr/bin
     description: "A unified CLI for system package managers"
@@ -52,6 +49,19 @@ nfpms:
     license: 0BSD
     homepage: https://github.com/gogrlx/snack
     vendor: Adatomic, Inc.
+
+homebrew_casks:
+  - ids: [snack, snack-universal]
+    name: snack
+    binaries:
+      - snack
+    repository:
+      owner: gogrlx
+      name: homebrew-tap
+    directory: Casks
+    homepage: https://github.com/gogrlx/snack
+    description: "A unified CLI for system package managers"
+    license: 0BSD
 
 release:
   github:
