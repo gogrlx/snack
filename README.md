@@ -93,6 +93,12 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println("Detected:", mgr.Name())
+
+aptMgr, err := detect.ByName(" APT ")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Requested:", aptMgr.Name())
 ```
 
 ## Interfaces
