@@ -36,6 +36,16 @@ func TestByNameKnown(t *testing.T) {
 	}
 }
 
+func TestByNameNormalizesInput(t *testing.T) {
+	m, err := ByName("  APT\n")
+	if err != nil {
+		t.Fatalf("ByName normalized input returned error: %v", err)
+	}
+	if m.Name() != "apt" {
+		t.Errorf("ByName normalized input Name() = %q, want %q", m.Name(), "apt")
+	}
+}
+
 func TestByNameReturnsCorrectType(t *testing.T) {
 	m, err := ByName("apt")
 	if err != nil {

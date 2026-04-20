@@ -3,6 +3,7 @@ package detect
 
 import (
 	"os/exec"
+	"strings"
 	"sync/atomic"
 
 	"github.com/gogrlx/snack"
@@ -56,11 +57,13 @@ func All() []snack.Manager {
 }
 
 // ByName returns a specific manager by name, regardless of availability.
+// Name matching is case-insensitive and ignores surrounding whitespace.
 // Returns ErrManagerNotFound if the name is not recognized.
 func ByName(name string) (snack.Manager, error) {
+	needle := strings.ToLower(strings.TrimSpace(name))
 	for _, fn := range allManagers() {
 		m := fn()
-		if m.Name() == name {
+		if m.Name() == needle {
 			return m, nil
 		}
 	}
