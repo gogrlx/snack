@@ -22,6 +22,12 @@ var (
 )
 
 func main() {
+	if err := fang.Execute(context.Background(), newRootCmd()); err != nil {
+		os.Exit(1)
+	}
+}
+
+func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "snack",
 		Short: "A unified CLI for system package managers",
@@ -54,9 +60,7 @@ behind a single, consistent interface.`,
 		versionCmd(),
 	)
 
-	if err := fang.Execute(context.Background(), rootCmd); err != nil {
-		os.Exit(1)
-	}
+	return rootCmd
 }
 
 func getManager() (snack.Manager, error) {

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gogrlx/snack"
+	"github.com/spf13/cobra"
 )
 
 func TestTargets(t *testing.T) {
@@ -146,5 +147,91 @@ func TestGetManager(t *testing.T) {
 func TestVersionString(t *testing.T) {
 	if version == "" {
 		t.Error("version should not be empty")
+	}
+}
+
+func TestNewRootCmdRegistersPersistentFlags(t *testing.T) {
+	cmd := newRootCmd()
+
+	for _, flagName := range []string{"manager", "sudo", "yes", "dry-run"} {
+		if cmd.PersistentFlags().Lookup(flagName) == nil {
+			t.Fatalf("expected persistent flag %q to be registered", flagName)
+		}
+	}
+}
+
+func TestNewRootCmdRegistersExpectedCommands(t *testing.T) {
+	cmd := newRootCmd()
+
+	want := map[string]struct{}{
+		"install": {},
+		"remove":  {},
+		"purge":   {},
+		"upgrade": {},
+		"update":  {},
+		"list":    {},
+		"search":  {},
+		"info":    {},
+		"which":   {},
+		"hold":    {},
+		"unhold":  {},
+		"clean":   {},
+		"repo":    {},
+		"key":     {},
+		"group":   {},
+		"detect":  {},
+		"version": {},
+	}
+
+	if len(cmd.Commands()) != len(want) {
+		t.Fatalf("newRootCmd() registered %d commands, want %d", len(cmd.Commands()), len(want))
+	}
+
+	for _, subcmd := range cmd.Commands() {
+		if _, ok := want[subcmd.Name()]; !ok {
+			t.Fatalf("unexpected subcommand %q", subcmd.Name())
+		}
+		delete(want, subcmd.Name())
+	}
+
+	if len(want) != 0 {
+		t.Fatalf("missing subcommands: %v", want)
+	}
+}
+
+func TestNestedCommandRegistration(t *testing.T) {
+	tests := []struct {
+		name string
+		cmd  *cobra.Command
+		want []string
+	}{
+		{
+			name: "repo",
+			cmd:  repoCmd(),
+			want: []string{"add", "list", "remove"},
+		},
+		{
+			name: "key",
+			cmd:  keyCmd(),
+			want: []string{"add", "list", "remove"},
+		},
+		{
+			name: "group",
+			cmd:  groupCmd(),
+			want: []string{"info", "install", "list"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if len(tt.cmd.Commands()) != len(tt.want) {
+				t.Fatalf("%s registered %d subcommands, want %d", tt.name, len(tt.cmd.Commands()), len(tt.want))
+			}
+			for _, name := range tt.want {
+				if _, _, err := tt.cmd.Find([]string{name}); err != nil {
+					t.Fatalf("expected %s to register subcommand %q: %v", tt.name, name, err)
+				}
+			}
+		})
 	}
 }
