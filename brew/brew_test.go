@@ -139,6 +139,7 @@ func TestNormalizeName(t *testing.T) {
 		{"node@18", "node"},
 		{"go", "go"},
 		{"ruby@3.2", "ruby"},
+		{"postgresql@16@beta", "postgresql@16"},
 	}
 
 	b := New()
@@ -347,6 +348,7 @@ func TestParseVersionSuffix(t *testing.T) {
 		{"node@18", "node", "18"},
 		{"git", "git", ""},
 		{"ruby@3.2", "ruby", "3.2"},
+		{"postgresql@16@beta", "postgresql@16", "beta"},
 		{"", "", ""},
 		{"@3.12", "@3.12", ""}, // @ at position 0, LastIndex returns 0 which is not > 0
 	}

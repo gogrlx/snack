@@ -455,3 +455,49 @@ func TestName(t *testing.T) {
 		t.Errorf("Name() = %q, want %q", s.Name(), "snap")
 	}
 }
+
+func TestNormalizeName(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"firefox", "firefox"},
+		{"hello-world", "hello-world"},
+		{"snap.with.dots", "snap.with.dots"},
+		{"  keep-whitespace  ", "  keep-whitespace  "},
+		{"", ""},
+	}
+
+	s := New()
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			if got := s.NormalizeName(tt.input); got != tt.want {
+				t.Errorf("NormalizeName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseArch(t *testing.T) {
+	tests := []struct {
+		input    string
+		wantName string
+		wantArch string
+	}{
+		{"firefox", "firefox", ""},
+		{"hello-world", "hello-world", ""},
+		{"snap.with.dots", "snap.with.dots", ""},
+		{"", "", ""},
+	}
+
+	s := New()
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			gotName, gotArch := s.ParseArch(tt.input)
+			if gotName != tt.wantName || gotArch != tt.wantArch {
+				t.Errorf("ParseArch(%q) = (%q, %q), want (%q, %q)",
+					tt.input, gotName, gotArch, tt.wantName, tt.wantArch)
+			}
+		})
+	}
+}
