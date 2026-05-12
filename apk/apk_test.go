@@ -6,6 +6,106 @@ import (
 	"github.com/gogrlx/snack"
 )
 
+// Compile-time interface assertions.
+var (
+	_ snack.Manager         = (*Apk)(nil)
+	_ snack.PackageUpgrader = (*Apk)(nil)
+	_ snack.VersionQuerier  = (*Apk)(nil)
+	_ snack.Cleaner         = (*Apk)(nil)
+	_ snack.FileOwner       = (*Apk)(nil)
+	_ snack.NameNormalizer  = (*Apk)(nil)
+	_ snack.DryRunner       = (*Apk)(nil)
+)
+
+func TestNew(t *testing.T) {
+	a := New()
+	if a == nil {
+		t.Fatal("New() returned nil")
+	}
+	if a.Name() != "apk" {
+		t.Errorf("Name() = %q, want %q", a.Name(), "apk")
+	}
+}
+
+func TestSupportsDryRun(t *testing.T) {
+	a := New()
+	if !a.SupportsDryRun() {
+		t.Error("expected SupportsDryRun() = true")
+	}
+}
+
+func TestCapabilities(t *testing.T) {
+	caps := snack.GetCapabilities(New())
+	checks := []struct {
+		name string
+		got  bool
+		want bool
+	}{
+		{"VersionQuery", caps.VersionQuery, true},
+		{"Clean", caps.Clean, true},
+		{"FileOwnership", caps.FileOwnership, true},
+		{"NameNormalize", caps.NameNormalize, true},
+		{"DryRun", caps.DryRun, true},
+		{"PackageUpgrade", caps.PackageUpgrade, true},
+		{"Hold", caps.Hold, false},
+		{"RepoManagement", caps.RepoManagement, false},
+		{"KeyManagement", caps.KeyManagement, false},
+		{"Groups", caps.Groups, false},
+	}
+
+	for _, check := range checks {
+		t.Run(check.name, func(t *testing.T) {
+			if check.got != check.want {
+				t.Errorf("%s = %v, want %v", check.name, check.got, check.want)
+			}
+		})
+	}
+}
+
+func TestNormalizeNameMethod(t *testing.T) {
+	a := New()
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"curl", "curl"},
+		{"curl-x86_64", "curl"},
+		{"openssl-aarch64", "openssl"},
+		{"busybox", "busybox"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			if got := a.NormalizeName(tt.input); got != tt.want {
+				t.Errorf("NormalizeName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseArchMethod(t *testing.T) {
+	a := New()
+	tests := []struct {
+		input    string
+		wantName string
+		wantArch string
+	}{
+		{"curl-x86_64", "curl", "x86_64"},
+		{"openssl-aarch64", "openssl", "aarch64"},
+		{"busybox", "busybox", ""},
+		{"go-loongarch64", "go", "loongarch64"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			gotName, gotArch := a.ParseArch(tt.input)
+			if gotName != tt.wantName || gotArch != tt.wantArch {
+				t.Errorf("ParseArch(%q) = (%q, %q), want (%q, %q)", tt.input, gotName, gotArch, tt.wantName, tt.wantArch)
+			}
+		})
+	}
+}
+
 func TestSplitNameVersion(t *testing.T) {
 	tests := []struct {
 		input   string
@@ -372,48 +472,6 @@ func TestInterfaceCompliance(t *testing.T) {
 	}
 	if _, ok := m.(snack.PackageUpgrader); !ok {
 		t.Error("Apk should implement PackageUpgrader")
-	}
-}
-
-func TestCapabilities(t *testing.T) {
-	caps := snack.GetCapabilities(New())
-	if !caps.VersionQuery {
-		t.Error("expected VersionQuery=true")
-	}
-	if !caps.Clean {
-		t.Error("expected Clean=true")
-	}
-	if !caps.FileOwnership {
-		t.Error("expected FileOwnership=true")
-	}
-	if !caps.DryRun {
-		t.Error("expected DryRun=true")
-	}
-	// Should be false
-	if caps.Hold {
-		t.Error("expected Hold=false")
-	}
-	if caps.RepoManagement {
-		t.Error("expected RepoManagement=false")
-	}
-	if caps.KeyManagement {
-		t.Error("expected KeyManagement=false")
-	}
-	if caps.Groups {
-		t.Error("expected Groups=false")
-	}
-	if !caps.NameNormalize {
-		t.Error("expected NameNormalize=true")
-	}
-	if !caps.PackageUpgrade {
-		t.Error("expected PackageUpgrade=true")
-	}
-}
-
-func TestSupportsDryRun(t *testing.T) {
-	a := New()
-	if !a.SupportsDryRun() {
-		t.Error("SupportsDryRun() should return true")
 	}
 }
 
