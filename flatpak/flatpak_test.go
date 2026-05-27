@@ -151,6 +151,57 @@ func TestParseSearchEdgeCases(t *testing.T) {
 	})
 }
 
+func TestNormalizeName(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{name: "app id only", input: "org.mozilla.Firefox", want: "org.mozilla.Firefox"},
+		{name: "arch and branch", input: "org.mozilla.Firefox/x86_64/stable", want: "org.mozilla.Firefox"},
+		{name: "default arch branch", input: "org.mozilla.Firefox//stable", want: "org.mozilla.Firefox"},
+		{name: "trailing slash ref", input: "org.mozilla.Firefox/", want: "org.mozilla.Firefox"},
+	}
+
+	flatpakManager := New()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := flatpakManager.NormalizeName(tt.input); got != tt.want {
+				t.Errorf("NormalizeName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseRef(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		wantName string
+		wantArch string
+	}{
+		{name: "app id only", input: "org.mozilla.Firefox", wantName: "org.mozilla.Firefox", wantArch: ""},
+		{name: "arch and branch", input: "org.mozilla.Firefox/x86_64/stable", wantName: "org.mozilla.Firefox", wantArch: "x86_64"},
+		{name: "default arch branch", input: "org.mozilla.Firefox//stable", wantName: "org.mozilla.Firefox", wantArch: ""},
+		{name: "trailing slash ref", input: "org.mozilla.Firefox/", wantName: "org.mozilla.Firefox", wantArch: ""},
+	}
+
+	flatpakManager := New()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotArch := parseRef(tt.input)
+			if gotName != tt.wantName || gotArch != tt.wantArch {
+				t.Errorf("parseRef(%q) = (%q, %q), want (%q, %q)", tt.input, gotName, gotArch, tt.wantName, tt.wantArch)
+			}
+
+			methodName, methodArch := flatpakManager.ParseArch(tt.input)
+			if methodName != tt.wantName || methodArch != tt.wantArch {
+				t.Errorf("ParseArch(%q) = (%q, %q), want (%q, %q)", tt.input, methodName, methodArch, tt.wantName, tt.wantArch)
+			}
+		})
+	}
+}
+
 func TestParseInfo(t *testing.T) {
 	input := `Name: Firefox
 Description: Fast, private web browser
