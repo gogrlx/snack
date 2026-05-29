@@ -6,6 +6,69 @@ import (
 	"github.com/gogrlx/snack"
 )
 
+// Compile-time interface assertions.
+var (
+	_ snack.Manager         = (*Ports)(nil)
+	_ snack.VersionQuerier  = (*Ports)(nil)
+	_ snack.Cleaner         = (*Ports)(nil)
+	_ snack.FileOwner       = (*Ports)(nil)
+	_ snack.NameNormalizer  = (*Ports)(nil)
+	_ snack.PackageUpgrader = (*Ports)(nil)
+)
+
+func TestNew(t *testing.T) {
+	p := New()
+	if p == nil {
+		t.Fatal("New() returned nil")
+	}
+	if p.Name() != "ports" {
+		t.Errorf("Name() = %q, want %q", p.Name(), "ports")
+	}
+}
+
+func TestNormalizeNameMethod(t *testing.T) {
+	p := New()
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"curl-8.5.0", "curl"},
+		{"python-3.11.7p0", "python"},
+		{"quirks", "quirks"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			if got := p.NormalizeName(tt.input); got != tt.want {
+				t.Errorf("NormalizeName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseArchMethod(t *testing.T) {
+	p := New()
+	tests := []struct {
+		input    string
+		wantName string
+		wantArch string
+	}{
+		{"curl-8.5.0", "curl-8.5.0", ""},
+		{"python-3.11.7p0", "python-3.11.7p0", ""},
+		{"quirks", "quirks", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			gotName, gotArch := p.ParseArch(tt.input)
+			if gotName != tt.wantName || gotArch != tt.wantArch {
+				t.Errorf("ParseArch(%q) = (%q, %q), want (%q, %q)", tt.input, gotName, gotArch, tt.wantName, tt.wantArch)
+			}
+		})
+	}
+}
+
 func TestParseList(t *testing.T) {
 	input := `bash-5.2.21        GNU Bourne Again Shell
 curl-8.5.0         command line tool for transferring data
@@ -750,59 +813,31 @@ func TestParseOwnerOutputEdgeCases(t *testing.T) {
 	}
 }
 
-func TestInterfaceCompliance(t *testing.T) {
-	var _ snack.Manager = (*Ports)(nil)
-	var _ snack.VersionQuerier = (*Ports)(nil)
-	var _ snack.Cleaner = (*Ports)(nil)
-	var _ snack.FileOwner = (*Ports)(nil)
-	var _ snack.PackageUpgrader = (*Ports)(nil)
-}
-
-func TestPackageUpgraderInterface(t *testing.T) {
-	var _ snack.PackageUpgrader = (*Ports)(nil)
-}
-
-func TestName(t *testing.T) {
-	p := New()
-	if p.Name() != "ports" {
-		t.Errorf("Name() = %q, want %q", p.Name(), "ports")
-	}
-}
-
 func TestCapabilities(t *testing.T) {
 	caps := snack.GetCapabilities(New())
 
-	// Should be true
-	if !caps.VersionQuery {
-		t.Error("expected VersionQuery=true")
-	}
-	if !caps.Clean {
-		t.Error("expected Clean=true")
-	}
-	if !caps.FileOwnership {
-		t.Error("expected FileOwnership=true")
+	tests := []struct {
+		name string
+		got  bool
+		want bool
+	}{
+		{"VersionQuery", caps.VersionQuery, true},
+		{"Clean", caps.Clean, true},
+		{"FileOwnership", caps.FileOwnership, true},
+		{"NameNormalize", caps.NameNormalize, true},
+		{"PackageUpgrade", caps.PackageUpgrade, true},
+		{"Hold", caps.Hold, false},
+		{"RepoManagement", caps.RepoManagement, false},
+		{"KeyManagement", caps.KeyManagement, false},
+		{"Groups", caps.Groups, false},
+		{"DryRun", caps.DryRun, false},
 	}
 
-	// Should be false
-	if caps.Hold {
-		t.Error("expected Hold=false")
-	}
-	if caps.RepoManagement {
-		t.Error("expected RepoManagement=false")
-	}
-	if caps.KeyManagement {
-		t.Error("expected KeyManagement=false")
-	}
-	if caps.Groups {
-		t.Error("expected Groups=false")
-	}
-	if !caps.NameNormalize {
-		t.Error("expected NameNormalize=true")
-	}
-	if caps.DryRun {
-		t.Error("expected DryRun=false")
-	}
-	if !caps.PackageUpgrade {
-		t.Error("expected PackageUpgrade=true")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.want)
+			}
+		})
 	}
 }
