@@ -20,7 +20,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-const goVersion = "1.26.0"
+const goVersion = "1.26.4"
 
 // distroTest describes a container environment and the test packages available in it.
 type distroTest struct {

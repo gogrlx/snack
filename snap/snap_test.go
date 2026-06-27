@@ -493,6 +493,12 @@ func TestParseArch(t *testing.T) {
 	s := New()
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
+			rawName, rawArch := parseArch(tt.input)
+			if rawName != tt.wantName || rawArch != tt.wantArch {
+				t.Errorf("parseArch(%q) = (%q, %q), want (%q, %q)",
+					tt.input, rawName, rawArch, tt.wantName, tt.wantArch)
+			}
+
 			gotName, gotArch := s.ParseArch(tt.input)
 			if gotName != tt.wantName || gotArch != tt.wantArch {
 				t.Errorf("ParseArch(%q) = (%q, %q), want (%q, %q)",
