@@ -12,7 +12,7 @@ import (
 	"github.com/gogrlx/snack"
 )
 
-const rpcBaseURL = "https://aur.archlinux.org/rpc/v5"
+var rpcBaseURL = "https://aur.archlinux.org/rpc/v5"
 
 // rpcResponse is the top-level AUR RPC response.
 type rpcResponse struct {
