@@ -235,3 +235,167 @@ func TestNestedCommandRegistration(t *testing.T) {
 		})
 	}
 }
+
+func TestCommandArgumentContracts(t *testing.T) {
+	tests := []struct {
+		name      string
+		cmd       *cobra.Command
+		validArgs []string
+		badArgs   [][]string
+	}{
+		{
+			name:      "install",
+			cmd:       installCmd(),
+			validArgs: []string{"curl"},
+			badArgs:   [][]string{nil},
+		},
+		{
+			name:      "remove",
+			cmd:       removeCmd(),
+			validArgs: []string{"curl"},
+			badArgs:   [][]string{nil},
+		},
+		{
+			name:      "purge",
+			cmd:       purgeCmd(),
+			validArgs: []string{"curl"},
+			badArgs:   [][]string{nil},
+		},
+		{
+			name:      "upgrade",
+			cmd:       upgradeCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"curl"}},
+		},
+		{
+			name:      "update",
+			cmd:       updateCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"curl"}},
+		},
+		{
+			name:      "list",
+			cmd:       listCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"curl"}},
+		},
+		{
+			name:      "search",
+			cmd:       searchCmd(),
+			validArgs: []string{"curl"},
+			badArgs:   [][]string{nil, {"curl", "wget"}},
+		},
+		{
+			name:      "info",
+			cmd:       infoCmd(),
+			validArgs: []string{"curl"},
+			badArgs:   [][]string{nil, {"curl", "wget"}},
+		},
+		{
+			name:      "which",
+			cmd:       whichCmd(),
+			validArgs: []string{"/usr/bin/curl"},
+			badArgs:   [][]string{nil, {"/usr/bin/curl", "/usr/bin/wget"}},
+		},
+		{
+			name:      "hold",
+			cmd:       holdCmd(),
+			validArgs: []string{"curl"},
+			badArgs:   [][]string{nil},
+		},
+		{
+			name:      "unhold",
+			cmd:       unholdCmd(),
+			validArgs: []string{"curl"},
+			badArgs:   [][]string{nil},
+		},
+		{
+			name:      "clean",
+			cmd:       cleanCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"curl"}},
+		},
+		{
+			name:      "detect",
+			cmd:       detectCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"curl"}},
+		},
+		{
+			name:      "version",
+			cmd:       versionCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"curl"}},
+		},
+		{
+			name:      "repo list",
+			cmd:       repoListCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"origin"}},
+		},
+		{
+			name:      "repo add",
+			cmd:       repoAddCmd(),
+			validArgs: []string{"https://example.invalid/repo"},
+			badArgs:   [][]string{nil, {"one", "two"}},
+		},
+		{
+			name:      "repo remove",
+			cmd:       repoRemoveCmd(),
+			validArgs: []string{"testing"},
+			badArgs:   [][]string{nil, {"one", "two"}},
+		},
+		{
+			name:      "key list",
+			cmd:       keyListCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"key"}},
+		},
+		{
+			name:      "key add",
+			cmd:       keyAddCmd(),
+			validArgs: []string{"ABC123"},
+			badArgs:   [][]string{nil, {"ABC123", "DEF456"}},
+		},
+		{
+			name:      "key remove",
+			cmd:       keyRemoveCmd(),
+			validArgs: []string{"ABC123"},
+			badArgs:   [][]string{nil, {"ABC123", "DEF456"}},
+		},
+		{
+			name:      "group list",
+			cmd:       groupListCmd(),
+			validArgs: nil,
+			badArgs:   [][]string{{"base"}},
+		},
+		{
+			name:      "group info",
+			cmd:       groupInfoCmd(),
+			validArgs: []string{"base"},
+			badArgs:   [][]string{nil, {"base", "extra"}},
+		},
+		{
+			name:      "group install",
+			cmd:       groupInstallCmd(),
+			validArgs: []string{"base"},
+			badArgs:   [][]string{nil, {"base", "extra"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name+"/valid", func(t *testing.T) {
+			if err := tt.cmd.Args(tt.cmd, tt.validArgs); err != nil {
+				t.Fatalf("Args(%v) returned unexpected error: %v", tt.validArgs, err)
+			}
+		})
+
+		for _, badArgs := range tt.badArgs {
+			t.Run(tt.name+"/invalid", func(t *testing.T) {
+				if err := tt.cmd.Args(tt.cmd, badArgs); err == nil {
+					t.Fatalf("Args(%v) returned nil error", badArgs)
+				}
+			})
+		}
+	}
+}
