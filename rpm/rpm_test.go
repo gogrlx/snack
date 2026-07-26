@@ -82,7 +82,7 @@ func TestParseArchMethod(t *testing.T) {
 // RPM should NOT implement DryRunner.
 func TestNotDryRunner(t *testing.T) {
 	r := New()
-	if _, ok := interface{}(r).(snack.DryRunner); ok {
+	if _, ok := any(r).(snack.DryRunner); ok {
 		t.Error("RPM should not implement DryRunner")
 	}
 }

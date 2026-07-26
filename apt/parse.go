@@ -9,7 +9,7 @@ import (
 // parseList parses dpkg-query -W output into packages.
 func parseList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		if line == "" {
 			continue
 		}
@@ -33,15 +33,12 @@ func parseList(output string) []snack.Package {
 // parseSearch parses apt-cache search output.
 func parseSearch(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		if line == "" {
 			continue
 		}
 		// Format: "package - description"
 		parts := strings.SplitN(line, " - ", 2)
-		if len(parts) < 1 {
-			continue
-		}
 		p := snack.Package{Name: strings.TrimSpace(parts[0])}
 		if len(parts) == 2 {
 			p.Description = strings.TrimSpace(parts[1])
@@ -54,10 +51,10 @@ func parseSearch(output string) []snack.Package {
 // parsePolicyCandidate extracts the Candidate version from apt-cache policy output.
 // Returns empty string if no candidate is found or candidate is "(none)".
 func parsePolicyCandidate(output string) string {
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "Candidate:") {
-			candidate := strings.TrimSpace(strings.TrimPrefix(line, "Candidate:"))
+		if after, ok := strings.CutPrefix(line, "Candidate:"); ok {
+			candidate := strings.TrimSpace(after)
 			if candidate == "(none)" {
 				return ""
 			}
@@ -70,10 +67,10 @@ func parsePolicyCandidate(output string) string {
 // parsePolicyInstalled extracts the Installed version from apt-cache policy output.
 // Returns empty string if not installed or "(none)".
 func parsePolicyInstalled(output string) string {
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "Installed:") {
-			installed := strings.TrimSpace(strings.TrimPrefix(line, "Installed:"))
+		if after, ok := strings.CutPrefix(line, "Installed:"); ok {
+			installed := strings.TrimSpace(after)
 			if installed == "(none)" {
 				return ""
 			}
@@ -88,7 +85,7 @@ func parsePolicyInstalled(output string) string {
 // Format: "Inst pkg [old-ver] (new-ver repo [arch])"
 func parseUpgradeSimulation(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if !strings.HasPrefix(line, "Inst ") {
 			continue
@@ -120,7 +117,7 @@ func parseUpgradeSimulation(output string) []snack.Package {
 // parseHoldList parses apt-mark showhold output (one package name per line).
 func parseHoldList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -133,7 +130,7 @@ func parseHoldList(output string) []snack.Package {
 // parseFileList parses dpkg-query -L output (one file path per line).
 func parseFileList(output string) []string {
 	var files []string
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		line = strings.TrimSpace(line)
 		if line != "" {
 			files = append(files, line)
@@ -147,11 +144,11 @@ func parseFileList(output string) []string {
 // Returns the first package name.
 func parseOwner(output string) string {
 	line := strings.TrimSpace(strings.Split(output, "\n")[0])
-	colonIdx := strings.Index(line, ":")
-	if colonIdx < 0 {
+	before, _, ok := strings.Cut(line, ":")
+	if !ok {
 		return ""
 	}
-	pkgPart := line[:colonIdx]
+	pkgPart := before
 	if commaIdx := strings.Index(pkgPart, ","); commaIdx >= 0 {
 		pkgPart = strings.TrimSpace(pkgPart[:commaIdx])
 	}
@@ -206,7 +203,7 @@ func extractURL(line string) string {
 // parseInfo parses apt-cache show output into a Package.
 func parseInfo(output string) (*snack.Package, error) {
 	p := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		key, val, ok := strings.Cut(line, ": ")
 		if !ok {
 			continue

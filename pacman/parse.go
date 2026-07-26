@@ -10,7 +10,7 @@ import (
 // Each line is "name version".
 func parseList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -78,13 +78,13 @@ func parseSearch(output string) []snack.Package {
 // Format is "Key : Value" lines.
 func parseInfo(output string) *snack.Package {
 	pkg := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
-		idx := strings.Index(line, ":")
-		if idx < 0 {
+	for line := range strings.SplitSeq(output, "\n") {
+		before, after, ok := strings.Cut(line, ":")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+1:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 		switch key {
 		case "Name":
 			pkg.Name = val

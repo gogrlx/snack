@@ -11,7 +11,7 @@ import (
 // Format: "Name\tApplication ID\tVersion\tOrigin"
 func parseList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -42,7 +42,7 @@ func parseList(output string) []snack.Package {
 // Format: "Name\tApplication ID\tVersion\tRemotes"
 func parseSearch(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "No matches found") {
 			continue
@@ -71,13 +71,13 @@ func parseSearch(output string) []snack.Package {
 // parseInfo parses `flatpak info <pkg>` output (key: value format).
 func parseInfo(output string) *snack.Package {
 	pkg := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
-		idx := strings.Index(line, ":")
-		if idx < 0 {
+	for line := range strings.SplitSeq(output, "\n") {
+		before, after, ok := strings.Cut(line, ":")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+1:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 		switch key {
 		case "Name":
 			pkg.Name = val
@@ -101,7 +101,7 @@ func parseInfo(output string) *snack.Package {
 // Format: "Name\tURL\tOptions"
 func parseRemotes(output string) []snack.Repository {
 	var repos []snack.Repository
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -135,10 +135,7 @@ func semverCmp(a, b string) int {
 	partsA := strings.Split(a, ".")
 	partsB := strings.Split(b, ".")
 
-	maxLen := len(partsA)
-	if len(partsB) > maxLen {
-		maxLen = len(partsB)
-	}
+	maxLen := max(len(partsB), len(partsA))
 
 	for i := 0; i < maxLen; i++ {
 		var numA, numB int

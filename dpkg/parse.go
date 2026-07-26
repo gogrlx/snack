@@ -9,7 +9,7 @@ import (
 // parseList parses dpkg-query -W -f='${Package}\t${Version}\t${Status}\n' output.
 func parseList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		if line == "" {
 			continue
 		}
@@ -32,7 +32,7 @@ func parseList(output string) []snack.Package {
 // parseDpkgList parses dpkg-query -l output (table format with header).
 func parseDpkgList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		// Data lines start with status flags like "ii", "rc", etc.
 		if len(line) < 4 || line[2] != ' ' {
 			continue
@@ -62,7 +62,7 @@ func parseDpkgList(output string) []snack.Package {
 // parseInfo parses dpkg-query -s output into a Package.
 func parseInfo(output string) (*snack.Package, error) {
 	p := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		key, val, ok := strings.Cut(line, ": ")
 		if !ok {
 			continue

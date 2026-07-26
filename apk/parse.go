@@ -10,7 +10,7 @@ import (
 // Each line looks like: "name-1.2.3-r0 x86_64 {origin} (license) [installed]"
 func parseListInstalled(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -59,15 +59,15 @@ func splitNameVersion(s string) (string, string) {
 // parseSearch parses output from `apk search` or `apk search -v`.
 func parseSearch(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 		// `apk search -v` output: "name-version - description"
-		if idx := strings.Index(line, " - "); idx != -1 {
-			nameVer := line[:idx]
-			desc := line[idx+3:]
+		if before, after, ok := strings.Cut(line, " - "); ok {
+			nameVer := before
+			desc := after
 			name, ver := splitNameVersion(nameVer)
 			pkgs = append(pkgs, snack.Package{
 				Name:        name,
@@ -89,10 +89,10 @@ func parseSearch(output string) []snack.Package {
 // parseInfo parses output from `apk info -a <pkg>`.
 func parseInfo(output string) *snack.Package {
 	pkg := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "description:") {
-			pkg.Description = strings.TrimSpace(strings.TrimPrefix(line, "description:"))
+		if after, ok := strings.CutPrefix(line, "description:"); ok {
+			pkg.Description = strings.TrimSpace(after)
 		}
 	}
 
@@ -141,17 +141,17 @@ func parseInfoNameVersion(output string) (string, string) {
 // Lines look like: "(1/3) Upgrading pkg (oldver -> newver)"
 func parseUpgradeSimulation(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if !strings.Contains(line, "Upgrading") {
 			continue
 		}
 		// "(1/3) Upgrading pkg (oldver -> newver)"
-		idx := strings.Index(line, "Upgrading ")
-		if idx < 0 {
+		_, after, ok := strings.Cut(line, "Upgrading ")
+		if !ok {
 			continue
 		}
-		rest := line[idx+len("Upgrading "):]
+		rest := after
 		// "pkg (oldver -> newver)"
 		parts := strings.SplitN(rest, " (", 2)
 		if len(parts) < 1 {

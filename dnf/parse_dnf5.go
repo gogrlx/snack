@@ -39,7 +39,7 @@ func stripPreamble(output string) string {
 func parseListDNF5(output string) []snack.Package {
 	output = stripPreamble(output)
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			continue
@@ -82,7 +82,7 @@ func parseListDNF5(output string) []snack.Package {
 func parseSearchDNF5(output string) []snack.Package {
 	output = stripPreamble(output)
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" || strings.HasPrefix(trimmed, "Matched fields:") {
 			continue
@@ -113,13 +113,13 @@ func parseSearchDNF5(output string) []snack.Package {
 func parseInfoDNF5(output string) *snack.Package {
 	output = stripPreamble(output)
 	pkg := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
-		idx := strings.Index(line, " : ")
-		if idx < 0 {
+	for line := range strings.SplitSeq(output, "\n") {
+		before, after, ok := strings.Cut(line, " : ")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+3:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 		switch key {
 		case "Name":
 			pkg.Name = val
@@ -159,7 +159,7 @@ func parseGroupListDNF5(output string) []string {
 	output = stripPreamble(output)
 	var groups []string
 	inBody := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			continue
@@ -193,7 +193,7 @@ func parseGroupListDNF5(output string) []string {
 func parseGroupIsInstalledDNF5(output, group string) bool {
 	output = stripPreamble(output)
 	inBody := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			continue
@@ -230,10 +230,10 @@ func parseGroupIsInstalledDNF5(output, group string) bool {
 func parseVersionLockDNF5(output string) []snack.Package {
 	output = stripPreamble(output)
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "Package name:") {
-			name := strings.TrimSpace(strings.TrimPrefix(trimmed, "Package name:"))
+		if after, ok := strings.CutPrefix(trimmed, "Package name:"); ok {
+			name := strings.TrimSpace(after)
 			if name != "" {
 				pkgs = append(pkgs, snack.Package{Name: name, Installed: true})
 			}
@@ -253,13 +253,13 @@ func parseGroupInfoDNF5(output string) []snack.Package {
 	output = stripPreamble(output)
 	var pkgs []snack.Package
 	inPkgSection := false
-	for _, line := range strings.Split(output, "\n") {
-		idx := strings.Index(line, " : ")
-		if idx < 0 {
+	for line := range strings.SplitSeq(output, "\n") {
+		before, after, ok := strings.Cut(line, " : ")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+3:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 
 		if key == "Mandatory packages" || key == "Default packages" ||
 			key == "Optional packages" || key == "Conditional packages" {

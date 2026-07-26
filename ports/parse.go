@@ -10,7 +10,7 @@ import (
 // Format: "name-version description text"
 func parseList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -36,7 +36,7 @@ func parseList(output string) []snack.Package {
 // Each line is a package name-version.
 func parseSearchResults(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -60,8 +60,8 @@ func parseInfoOutput(output string, pkg string) *snack.Package {
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "Information for ") {
-			nameVer := strings.TrimPrefix(line, "Information for ")
+		if after, ok := strings.CutPrefix(line, "Information for "); ok {
+			nameVer := after
 			nameVer = strings.TrimSuffix(nameVer, ":")
 			p.Name, p.Version = splitNameVersion(nameVer)
 			continue
@@ -78,8 +78,8 @@ func parseInfoOutput(output string, pkg string) *snack.Package {
 				inDesc = false
 				continue
 			}
-			if strings.HasPrefix(trimmed, "Comment:") {
-				p.Description = strings.TrimSpace(strings.TrimPrefix(trimmed, "Comment:"))
+			if after, ok := strings.CutPrefix(trimmed, "Comment:"); ok {
+				p.Description = strings.TrimSpace(after)
 				continue
 			}
 			if strings.HasPrefix(trimmed, "Description:") {
@@ -109,7 +109,7 @@ func parseInfoOutput(output string, pkg string) *snack.Package {
 // Lines like "name-oldver -> name-newver" indicate available upgrades.
 func parseUpgradeOutput(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if !strings.Contains(line, "->") {
 			continue
@@ -136,7 +136,7 @@ func parseUpgradeOutput(output string) []snack.Package {
 // Lines starting with "/" after the header are file paths.
 func parseFileListOutput(output string) []string {
 	var files []string
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "/") {
 			files = append(files, line)

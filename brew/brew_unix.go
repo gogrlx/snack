@@ -269,7 +269,7 @@ type brewOutdatedJSON struct {
 
 func parseBrewList(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -292,12 +292,12 @@ func parseBrewList(output string) []snack.Package {
 
 func parseBrewSearch(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "==>") {
 			continue
 		}
-		for _, name := range strings.Fields(line) {
+		for name := range strings.FieldsSeq(line) {
 			pkgs = append(pkgs, snack.Package{Name: name})
 		}
 	}
@@ -374,10 +374,7 @@ func semverCmp(a, b string) int {
 	partsA := strings.Split(a, ".")
 	partsB := strings.Split(b, ".")
 
-	maxLen := len(partsA)
-	if len(partsB) > maxLen {
-		maxLen = len(partsB)
-	}
+	maxLen := max(len(partsB), len(partsA))
 
 	for i := 0; i < maxLen; i++ {
 		var numA, numB int
@@ -410,7 +407,7 @@ func fileList(ctx context.Context, pkg string) ([]string, error) {
 		}
 	}
 	var files []string
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		line = strings.TrimSpace(line)
 		if line != "" {
 			files = append(files, line)
@@ -426,7 +423,7 @@ func owner(ctx context.Context, path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("brew owner: %w", err)
 	}
-	for _, pkg := range strings.Fields(out) {
+	for pkg := range strings.FieldsSeq(out) {
 		files, err := fileList(ctx, pkg)
 		if err != nil {
 			continue

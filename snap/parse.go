@@ -67,13 +67,13 @@ func parseSnapFind(output string) []snack.Package {
 // parseSnapInfo parses `snap info <pkg>` key:value output.
 func parseSnapInfo(output string) *snack.Package {
 	pkg := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
-		idx := strings.Index(line, ":")
-		if idx < 0 {
+	for line := range strings.SplitSeq(output, "\n") {
+		before, after, ok := strings.Cut(line, ":")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+1:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 		switch key {
 		case "name":
 			pkg.Name = val
@@ -99,10 +99,10 @@ func parseSnapInfo(output string) *snack.Package {
 // parseSnapInfoVersion extracts the latest/stable version from `snap info` output.
 func parseSnapInfoVersion(output string) string {
 	// Look for "latest/stable:" line
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "latest/stable:") {
-			val := strings.TrimPrefix(line, "latest/stable:")
+		if after, ok := strings.CutPrefix(line, "latest/stable:"); ok {
+			val := after
 			val = strings.TrimSpace(val)
 			fields := strings.Fields(val)
 			if len(fields) >= 1 && fields[0] != "--" && fields[0] != "^" {
@@ -149,10 +149,7 @@ func semverCmp(a, b string) int {
 	partsA := strings.Split(a, ".")
 	partsB := strings.Split(b, ".")
 
-	maxLen := len(partsA)
-	if len(partsB) > maxLen {
-		maxLen = len(partsB)
-	}
+	maxLen := max(len(partsB), len(partsA))
 
 	for i := 0; i < maxLen; i++ {
 		var numA, numB int

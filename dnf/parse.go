@@ -46,7 +46,7 @@ func parseArch(name string) (string, string) {
 func parseList(output string) []snack.Package {
 	var pkgs []snack.Package
 	inBody := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -106,18 +106,18 @@ func parseList(output string) []snack.Package {
 //	pkg-name.arch : Description text
 func parseSearch(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "===") || strings.HasPrefix(line, "Last metadata") {
 			continue
 		}
 		// "pkg-name.arch : Description"
-		idx := strings.Index(line, " : ")
-		if idx < 0 {
+		before, after, ok := strings.Cut(line, " : ")
+		if !ok {
 			continue
 		}
-		nameArch := strings.TrimSpace(line[:idx])
-		desc := strings.TrimSpace(line[idx+3:])
+		nameArch := strings.TrimSpace(before)
+		desc := strings.TrimSpace(after)
 		name, arch := parseArch(nameArch)
 		pkgs = append(pkgs, snack.Package{
 			Name:        name,
@@ -132,13 +132,13 @@ func parseSearch(output string) []snack.Package {
 // Format is "Key  : Value" lines.
 func parseInfo(output string) *snack.Package {
 	pkg := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
-		idx := strings.Index(line, ":")
-		if idx < 0 {
+	for line := range strings.SplitSeq(output, "\n") {
+		before, after, ok := strings.Cut(line, ":")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+1:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 		switch key {
 		case "Name":
 			pkg.Name = val
@@ -166,7 +166,7 @@ func parseInfo(output string) *snack.Package {
 // Lines are typically package NEVRA patterns like "pkg-0:1.2.3-4.el9.*"
 func parseVersionLock(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "Last metadata") || strings.HasPrefix(line, "Adding") {
 			continue
@@ -208,7 +208,7 @@ func parseVersionLock(output string) []snack.Package {
 func parseRepoList(output string) []snack.Repository {
 	var repos []snack.Repository
 	inBody := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -246,7 +246,7 @@ func parseRepoList(output string) []snack.Repository {
 func parseGroupList(output string) []string {
 	var groups []string
 	inSection := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		if strings.HasSuffix(strings.TrimSpace(line), "Groups:") ||
 			strings.HasSuffix(strings.TrimSpace(line), "groups:") {
 			inSection = true
@@ -269,7 +269,7 @@ func parseGroupList(output string) []string {
 // in `dnf group list` output.
 func parseGroupIsInstalled(output, group string) bool {
 	inInstalled := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasSuffix(trimmed, "Groups:") || strings.HasSuffix(trimmed, "groups:") {
 			inInstalled = strings.HasPrefix(strings.ToLower(trimmed), "installed")
@@ -290,7 +290,7 @@ func parseGroupIsInstalled(output, group string) bool {
 func parseGroupInfo(output string) []snack.Package {
 	var pkgs []snack.Package
 	inPkgSection := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			inPkgSection = false

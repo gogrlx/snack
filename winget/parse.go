@@ -138,10 +138,7 @@ func extractFields(line string, cols []int) []string {
 		}
 		end := len(line)
 		if i+1 < len(cols) {
-			end = cols[i+1]
-			if end > len(line) {
-				end = len(line)
-			}
+			end = min(cols[i+1], len(line))
 		}
 		fields[i] = strings.TrimSpace(line[start:end])
 	}
@@ -175,7 +172,7 @@ func isFooterLine(line string) bool {
 //	...
 func parseShow(output string) *snack.Package {
 	pkg := &snack.Package{}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -191,12 +188,12 @@ func parseShow(output string) *snack.Package {
 			}
 			continue
 		}
-		idx := strings.Index(line, ":")
-		if idx < 0 {
+		before, after, ok := strings.Cut(line, ":")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+1:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 		switch strings.ToLower(key) {
 		case "version":
 			pkg.Version = val
@@ -299,10 +296,7 @@ func semverCmp(a, b string) int {
 	partsA := strings.Split(a, ".")
 	partsB := strings.Split(b, ".")
 
-	maxLen := len(partsA)
-	if len(partsB) > maxLen {
-		maxLen = len(partsB)
-	}
+	maxLen := max(len(partsB), len(partsA))
 
 	for i := 0; i < maxLen; i++ {
 		var numA, numB int

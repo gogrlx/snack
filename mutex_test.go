@@ -11,7 +11,7 @@ import (
 
 func TestLocker_MutualExclusion(t *testing.T) {
 	var l snack.Locker
-	var counter int64
+	var counter atomic.Int64
 	var wg sync.WaitGroup
 	const goroutines = 50
 
@@ -23,12 +23,12 @@ func TestLocker_MutualExclusion(t *testing.T) {
 			defer l.Unlock()
 			// If the lock works, only one goroutine touches
 			// the counter at a time.
-			cur := atomic.LoadInt64(&counter)
-			atomic.StoreInt64(&counter, cur+1)
+			cur := counter.Load()
+			counter.Store(cur + 1)
 		}()
 	}
 	wg.Wait()
-	assert.Equal(t, int64(goroutines), atomic.LoadInt64(&counter))
+	assert.Equal(t, int64(goroutines), counter.Load())
 }
 
 func TestLocker_LockUnlock(t *testing.T) {

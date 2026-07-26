@@ -9,7 +9,7 @@ import (
 // parseQuery parses the output of `pkg query '%n\t%v\t%c'`.
 func parseQuery(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -35,7 +35,7 @@ func parseQuery(output string) []snack.Package {
 // Format: "name-version                Comment text"
 func parseSearch(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -60,13 +60,13 @@ func parseSearch(output string) []snack.Package {
 // Format is "Key: Value" lines.
 func parseInfo(output string) *snack.Package {
 	pkg := &snack.Package{Installed: true}
-	for _, line := range strings.Split(output, "\n") {
-		idx := strings.Index(line, ":")
-		if idx < 0 {
+	for line := range strings.SplitSeq(output, "\n") {
+		before, after, ok := strings.Cut(line, ":")
+		if !ok {
 			continue
 		}
-		key := strings.TrimSpace(line[:idx])
-		val := strings.TrimSpace(line[idx+1:])
+		key := strings.TrimSpace(before)
+		val := strings.TrimSpace(after)
 		switch key {
 		case "Name":
 			pkg.Name = val
@@ -91,29 +91,29 @@ func parseInfo(output string) *snack.Package {
 //	Upgrading pkg-name: oldver -> newver
 func parseUpgrades(output string) []snack.Package {
 	var pkgs []snack.Package
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		// Look for "Upgrading" or "Reinstalling" lines with ->
 		if !strings.Contains(line, "->") {
 			continue
 		}
 		var nameVer string
-		if strings.HasPrefix(line, "Upgrading ") {
-			nameVer = strings.TrimPrefix(line, "Upgrading ")
-		} else if strings.HasPrefix(line, "Installing ") {
-			nameVer = strings.TrimPrefix(line, "Installing ")
-		} else if strings.HasPrefix(line, "Reinstalling ") {
-			nameVer = strings.TrimPrefix(line, "Reinstalling ")
+		if after, ok := strings.CutPrefix(line, "Upgrading "); ok {
+			nameVer = after
+		} else if after, ok := strings.CutPrefix(line, "Installing "); ok {
+			nameVer = after
+		} else if after, ok := strings.CutPrefix(line, "Reinstalling "); ok {
+			nameVer = after
 		} else {
 			continue
 		}
 		// "name: oldver -> newver"
-		colonIdx := strings.Index(nameVer, ":")
-		if colonIdx < 0 {
+		before, after, ok := strings.Cut(nameVer, ":")
+		if !ok {
 			continue
 		}
-		name := strings.TrimSpace(nameVer[:colonIdx])
-		rest := strings.TrimSpace(nameVer[colonIdx+1:])
+		name := strings.TrimSpace(before)
+		rest := strings.TrimSpace(after)
 		parts := strings.Fields(rest)
 		if len(parts) >= 3 && parts[1] == "->" {
 			pkgs = append(pkgs, snack.Package{
@@ -130,7 +130,7 @@ func parseUpgrades(output string) []snack.Package {
 // Lines starting with "/" after the header are file paths.
 func parseFileList(output string) []string {
 	var files []string
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "/") {
 			files = append(files, line)
@@ -143,8 +143,8 @@ func parseFileList(output string) []string {
 // Format: "/path was installed by package name-version"
 func parseOwner(output string) string {
 	output = strings.TrimSpace(output)
-	if idx := strings.Index(output, "was installed by package "); idx != -1 {
-		remainder := output[idx+len("was installed by package "):]
+	if _, after, ok := strings.Cut(output, "was installed by package "); ok {
+		remainder := after
 		name, _ := splitNameVersion(strings.TrimSpace(remainder))
 		return name
 	}
