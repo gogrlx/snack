@@ -80,8 +80,21 @@ func TestApplyOptions(t *testing.T) {
 }
 
 func TestGetCapabilities_NilSafe(t *testing.T) {
-	// GetCapabilities should work on any Manager implementation
-	// We can't easily test with nil, but we can verify the struct fields
+	var manager snack.Manager
+	caps := snack.GetCapabilities(manager)
+	assert.False(t, caps.VersionQuery)
+	assert.False(t, caps.Hold)
+	assert.False(t, caps.Clean)
+	assert.False(t, caps.FileOwnership)
+	assert.False(t, caps.RepoManagement)
+	assert.False(t, caps.KeyManagement)
+	assert.False(t, caps.Groups)
+	assert.False(t, caps.NameNormalize)
+	assert.False(t, caps.DryRun)
+	assert.False(t, caps.PackageUpgrade)
+}
+
+func TestCapabilities_ZeroValue(t *testing.T) {
 	caps := snack.Capabilities{}
 	assert.False(t, caps.VersionQuery)
 	assert.False(t, caps.Hold)
@@ -92,6 +105,7 @@ func TestGetCapabilities_NilSafe(t *testing.T) {
 	assert.False(t, caps.Groups)
 	assert.False(t, caps.NameNormalize)
 	assert.False(t, caps.DryRun)
+	assert.False(t, caps.PackageUpgrade)
 }
 
 func TestErrors(t *testing.T) {
