@@ -30,13 +30,24 @@ func TestFormatTargets(t *testing.T) {
 			want:    []string{"curl=7.88"},
 		},
 		{
+			name:    "with_source",
+			targets: []snack.Target{{Name: "local", Source: "./local.deb"}},
+			want:    []string{"./local.deb"},
+		},
+		{
+			name:    "source_precedes_version",
+			targets: []snack.Target{{Name: "local", Version: "1.2.3", Source: "https://example.com/local.deb"}},
+			want:    []string{"https://example.com/local.deb"},
+		},
+		{
 			name: "mixed",
 			targets: []snack.Target{
 				{Name: "curl"},
+				{Name: "local", Source: "./local.deb"},
 				{Name: "bash", Version: "5.2-1"},
 				{Name: "vim"},
 			},
-			want: []string{"curl", "bash=5.2-1", "vim"},
+			want: []string{"curl", "./local.deb", "bash=5.2-1", "vim"},
 		},
 		{
 			name:    "version_with_epoch",
@@ -118,9 +129,9 @@ func TestBuildArgs(t *testing.T) {
 		{
 			name: "all_options",
 			cmd:  "install",
-			pkgs: []snack.Target{{Name: "curl", Version: "7.88"}},
+			pkgs: []snack.Target{{Name: "curl", Version: "7.88"}, {Name: "local", Source: "./local.deb"}},
 			opts: []snack.Option{snack.WithSudo(), snack.WithAssumeYes(), snack.WithDryRun(), snack.WithFromRepo("sid"), snack.WithReinstall()},
-			want: []string{"sudo", "apt-get", "install", "-y", "--dry-run", "-t", "sid", "--reinstall", "curl=7.88"},
+			want: []string{"sudo", "apt-get", "install", "-y", "--dry-run", "-t", "sid", "--reinstall", "curl=7.88", "./local.deb"},
 		},
 		{
 			name: "multiple_packages",

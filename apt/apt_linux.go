@@ -22,7 +22,9 @@ func available() bool {
 func formatTargets(targets []snack.Target) []string {
 	args := make([]string, 0, len(targets))
 	for _, t := range targets {
-		if t.Version != "" {
+		if t.Source != "" {
+			args = append(args, t.Source)
+		} else if t.Version != "" {
 			args = append(args, t.Name+"="+t.Version)
 		} else {
 			args = append(args, t.Name)
