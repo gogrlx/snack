@@ -84,6 +84,9 @@ func rpcGet(ctx context.Context, endpoint string) (*rpcResponse, error) {
 	if result.Error != "" {
 		return nil, fmt.Errorf("aur rpc: %s", result.Error)
 	}
+	if result.ResultCount != len(result.Results) {
+		return nil, fmt.Errorf("aur rpc: result count %d does not match %d results", result.ResultCount, len(result.Results))
+	}
 
 	return &result, nil
 }
