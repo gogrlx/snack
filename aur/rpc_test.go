@@ -337,3 +337,24 @@ func TestRPCGetRejectsInvalidEndpoint(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "aur rpc")
 }
+
+func TestRPCInfoRejectsInconsistentResultCount(t *testing.T) {
+	for _, body := range []string{
+		`{"resultcount":1,"results":[]}`,
+		`{"resultcount":1,"results":null}`,
+		`{"resultcount":-1,"results":[]}`,
+		`{"resultcount":0,"results":[{"Name":"yay"}]}`,
+	} {
+		t.Run(body, func(t *testing.T) {
+			withRPCServer(t, func(w http.ResponseWriter, _ *http.Request) {
+				_, err := w.Write([]byte(body))
+				require.NoError(t, err)
+			})
+
+			pkg, err := rpcInfo(context.Background(), "yay")
+			require.ErrorContains(t, err, "result count")
+			assert.Nil(t, pkg)
+			assert.NotErrorIs(t, err, snack.ErrNotFound)
+		})
+	}
+}
