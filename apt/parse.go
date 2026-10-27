@@ -200,10 +200,13 @@ func extractURL(line string) string {
 	return ""
 }
 
-// parseInfo parses apt-cache show output into a Package.
+// parseInfo parses the first apt-cache show record into a Package.
 func parseInfo(output string) (*snack.Package, error) {
 	p := &snack.Package{}
 	for line := range strings.SplitSeq(output, "\n") {
+		if strings.TrimSpace(line) == "" && p.Name != "" {
+			break
+		}
 		key, val, ok := strings.Cut(line, ": ")
 		if !ok {
 			continue
