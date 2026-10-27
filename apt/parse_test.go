@@ -636,3 +636,19 @@ func TestExtractURL(t *testing.T) {
 		})
 	}
 }
+
+func TestParseInfoMultipleRecords(t *testing.T) {
+	for _, separator := range []string{"\n", " \t\n", "\r\n"} {
+		t.Run(separator, func(t *testing.T) {
+			output := "\nPackage: example\nVersion: 2.0\nArchitecture: amd64\nDescription: Current version\n" + separator +
+				"Package: example\nVersion: 1.0\nArchitecture: arm64\nDescription: Older version\n"
+			pkg, err := parseInfo(output)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if pkg.Name != "example" || pkg.Version != "2.0" || pkg.Arch != "amd64" || pkg.Description != "Current version" {
+				t.Fatalf("parseInfo() = %+v, want the first complete record", pkg)
+			}
+		})
+	}
+}
