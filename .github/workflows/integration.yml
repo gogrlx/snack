@@ -32,12 +32,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.27']
+        go-version: ['1.27', stable]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Verify module checksums
+        run: go mod verify
+      - name: Verify generated files are current
+        run: |
+          go generate ./...
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard)"
       - run: go build ./...
       - run: go test -race -coverprofile=coverage-unit.out ./...
       - uses: actions/upload-artifact@v4
