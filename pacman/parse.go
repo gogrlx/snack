@@ -61,8 +61,8 @@ func parseSearch(output string) []snack.Package {
 				pkg.Installed = true
 			}
 		}
-		// Next line is description
-		if i+1 < len(lines) {
+		// Only indented lines are descriptions; a header belongs to the next package.
+		if i+1 < len(lines) && (strings.HasPrefix(lines[i+1], " ") || strings.HasPrefix(lines[i+1], "\t")) {
 			desc := strings.TrimSpace(lines[i+1])
 			if desc != "" {
 				pkg.Description = desc

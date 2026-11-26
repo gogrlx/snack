@@ -161,3 +161,19 @@ Packager        : Someone
 	assert.Equal(t, "test", pkg.Name)
 	assert.Equal(t, "2.0", pkg.Version)
 }
+
+func TestParseSearch_MissingDescriptionBeforePackage(t *testing.T) {
+	for _, indentation := range []string{"    ", "\t"} {
+		t.Run(indentation, func(t *testing.T) {
+			pkgs := parseSearch("core/first 1.0\nextra/second 2.0 [installed]\n" + indentation + "Second description\n")
+			require.Len(t, pkgs, 2)
+			assert.Equal(t, "first", pkgs[0].Name)
+			assert.Empty(t, pkgs[0].Description)
+			assert.Equal(t, "second", pkgs[1].Name)
+			assert.Equal(t, "2.0", pkgs[1].Version)
+			assert.Equal(t, "extra", pkgs[1].Repository)
+			assert.True(t, pkgs[1].Installed)
+			assert.Equal(t, "Second description", pkgs[1].Description)
+		})
+	}
+}
